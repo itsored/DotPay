@@ -11,7 +11,7 @@ export const getApiBaseUrl = (): string => {
   
   // Fallback to environment-based URLs
   if (process.env.NODE_ENV === 'production') {
-    return 'https://backend-mirror-emcj0ujtz-griffins-projects-4324ce43.vercel.app/api';
+    return 'https://api.nexuspaydefi.xyz/api';
   }
   
   return 'http://localhost:8000/api';
@@ -25,7 +25,7 @@ export const getApiBaseUrlWithoutPath = (): string => {
   
   // Fallback to environment-based URLs
   if (process.env.NODE_ENV === 'production') {
-    return 'https://backend-mirror-emcj0ujtz-griffins-projects-4324ce43.vercel.app';
+    return 'https://api.nexuspaydefi.xyz';
   }
   
   return 'http://localhost:8000';
@@ -41,6 +41,6 @@ export const getApiUrl = (endpoint: string): string => {
 export const API_CONFIG = {
   BASE_URL: getApiBaseUrl(),
   BASE_URL_WITHOUT_PATH: getApiBaseUrlWithoutPath(),
-  PRODUCTION_URL: 'https://backend-mirror-emcj0ujtz-griffins-projects-4324ce43.vercel.app/api',
+  PRODUCTION_URL: 'https://api.nexuspaydefi.xyz/api',
   DEVELOPMENT_URL: 'http://localhost:8000/api',
 } as const;

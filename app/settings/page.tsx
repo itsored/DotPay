@@ -89,7 +89,14 @@ const SettingsPage = () => {
     },
     onError: (error: any) => {
       console.error("Failed to add phone and password:", error);
-      toast.error("Failed to add phone and password. Please try again.");
+      if (error?.response?.status === 409) {
+        const msg = error?.response?.data?.message || 'Phone already linked or credentials conflict';
+        toast.error(msg);
+      } else if (error?.response?.status === 400) {
+        toast.error(error?.response?.data?.message || 'Invalid request');
+      } else {
+        toast.error("Failed to add phone and password. Please try again.");
+      }
     }
   });
 
@@ -119,22 +126,45 @@ const SettingsPage = () => {
     }
   }, [isAuthenticated, user]);
 
-  // Initialize Google Sign-In when component mounts
+  // Initialize Google Sign-In when component mounts with server/env client ID
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.google) {
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
-        callback: (response: any) => {
-          if (response.credential) {
-            linkGoogleMutation.mutate(response.credential);
-          } else {
-            toast.error("Failed to get Google credentials");
-          }
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true
-      });
-    }
+    const initGsi = async () => {
+      try {
+        if (typeof window === 'undefined') return;
+        if (!window.google) return;
+
+        // Prefer server config; fallback to env
+        let clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+        try {
+          const config = await getGoogleConfig();
+          const serverClientId = (config as any)?.data?.clientId || (config as any)?.clientId;
+          if (serverClientId) clientId = serverClientId;
+        } catch {
+          // ignore, fallback to env
+        }
+
+        if (!clientId) {
+          console.error('Missing Google client_id for settings GSI init');
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response: any) => {
+            if (response.credential) {
+              linkGoogleMutation.mutate(response.credential);
+            } else {
+              toast.error("Failed to get Google credentials");
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+      } catch (e) {
+        console.error('Failed to initialize GSI on settings page', e);
+      }
+    };
+    initGsi();
   }, []);
 
   const loadUserProfile = async () => {
