@@ -21,7 +21,7 @@ import PasswordInput from "../../components/inputs/PasswordInput";
 import { formatPhoneNumberToE164, validateE164PhoneNumber } from "../../lib/phone-utils";
 
 const SettingsPage = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, getGoogleConfig } = useAuth();
   const { wallet, hasWallet, loading, initializeWallet } = useWallet();
   const { chain } = useChain();
   const router = useRouter();
