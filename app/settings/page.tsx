@@ -335,10 +335,10 @@ const SettingsPage = () => {
         </article>
 
         {/* Main content */}
-        <article className="mt-8 flex flex-col items-center p-5 xl:px-[200px]">
+        <article className="mt-8 flex flex-col items-center p-4 sm:p-5 xl:px-[200px]">
           <div className="w-full max-w-4xl space-y-6">
             {/* Account Information */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <User className="h-5 w-5" /> Account Information
@@ -395,7 +395,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Wallet Information (Universal and per-chain) */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <div className="w-5 h-5 bg-purple-500 rounded-full" /> Wallet Information
@@ -406,8 +406,8 @@ const SettingsPage = () => {
               {/* Universal wallet */}
               <div className="flex flex-col mb-4">
                 <label className="text-sm text-[#A4A4A4]">Universal Wallet Address</label>
-                <div className="flex justify-between items-center border border-[#0795B0] rounded-lg p-3 bg-[#0A0E0E]">
-                  <span className="flex-1 mr-2 text-sm">{universalWalletAddress ? formatWalletAddress(universalWalletAddress) : 'Not available'}</span>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between sm:items-center border border-[#0795B0] rounded-lg p-3 bg-[#0A0E0E]">
+                  <span className="flex-1 sm:mr-2 text-sm break-all">{universalWalletAddress ? formatWalletAddress(universalWalletAddress) : 'Not available'}</span>
                   {universalWalletAddress && (
                     <Button
                       variant="outline"
@@ -437,7 +437,7 @@ const SettingsPage = () => {
                 <div>
                   <label className="text-sm text-[#A4A4A4]">Arbitrum Wallet</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm">
+                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm break-all">
                       <span>{user?.arbitrumWallet || user?.walletAddress || "Not set"}</span>
                     </div>
                     <Button
@@ -454,7 +454,7 @@ const SettingsPage = () => {
                 <div>
                   <label className="text-sm text-[#A4A4A4]">Celo Wallet</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm">
+                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm break-all">
                       <span>{user?.celoWallet || user?.walletAddress || "Not set"}</span>
                     </div>
                     <Button
@@ -487,7 +487,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Authentication Methods */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <SettingsIcon className="h-5 w-5" /> Authentication Methods
@@ -496,7 +496,7 @@ const SettingsPage = () => {
               </div>
 
               {/* Phone Number */}
-              <div className="flex items-center justify-between p-4 bg-black/40 rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-black/40 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Smartphone className="h-5 w-5 text-blue-400" />
                   <div>
@@ -511,7 +511,7 @@ const SettingsPage = () => {
                     disabled={loading || addPhonePasswordMutation.isPending}
                     variant="outline"
                     size="sm"
-                    className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50"
+                    className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50 w-full sm:w-auto"
                   >
                     {user?.phoneNumber ? <Unlink className="h-4 w-4" /> : <Link className="h-4 w-4" />}
                     {user?.phoneNumber ? "Unlink" : "Add Phone"}
@@ -521,7 +521,7 @@ const SettingsPage = () => {
 
               {/* Google Account */}
               <div className="p-4 bg-black/40 rounded-lg mt-3">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-red-400" />
                     <div>
@@ -542,7 +542,7 @@ const SettingsPage = () => {
                         disabled={loading || linkGoogleMutation.isPending}
                         variant="outline"
                         size="sm"
-                        className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50"
+                        className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50 w-full sm:w-auto"
                       >
                         {getAuthMethodStatus('google').linked ? <Unlink className="h-4 w-4" /> : <Link className="h-4 w-4" />}
                         {getAuthMethodStatus('google').linked ? "Unlink" : "Link Google"}
@@ -560,7 +560,7 @@ const SettingsPage = () => {
                       onClick={() => setShowGoogleSignIn(false)}
                       variant="outline"
                       size="sm"
-                      className="mt-3 border-gray-500 text-gray-300 bg-transparent hover:bg-gray-500/20 hover:text-white"
+                      className="mt-3 border-gray-500 text-gray-300 bg-transparent hover:bg-gray-500/20 hover:text-white w-full sm:w-auto"
                     >
                       Cancel
                     </Button>
@@ -570,7 +570,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Security Settings */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold">Security</h2>
                 <p className="text-gray-400 text-sm">Manage your security preferences</p>

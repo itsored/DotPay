@@ -138,6 +138,22 @@ export default function RootLayout({
         <meta property="og:image" content="https://app.nexuspaydefi.xyz/icons/icon-512x512.png" />
       </head>
       <body className={inter.className}>
+        {/* Suppress console logs in production */}
+        {process.env.NODE_ENV === 'production' && (
+          <script dangerouslySetInnerHTML={{ __html: `
+            (function(){
+              var safe = function(){};
+              var methods = ['log','debug','info','warn','error'];
+              methods.forEach(function(m){try{console[m]=safe;}catch(e){}});
+              // Disable React devtools hook exposure if present
+              try{ if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                for (const k in window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                  window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k] = typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k] === 'function' ? function(){} : null;
+                }
+              }}catch(e){}
+            })();
+          ` }} />
+        )}
         <ReactQueryClientProvider>
           <PWAProvider>
             <AuthProvider>

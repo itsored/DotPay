@@ -291,6 +291,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useOptimizedBalance } from "@/hooks/useOptimizedBalance";
 import { BalanceSkeleton, BalanceErrorState, BalanceEmptyState } from "@/components/ui/balance-skeleton";
 import { RecentTransactions } from "@/components/transactions/RecentTransactions";
+import { cryptoConverter } from "@/lib/crypto-converter";
 
 const Home = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -383,11 +384,26 @@ const Home = () => {
     }
   };
 
-  // Convert USD to KES (using fixed rate for now)
+  // Dynamic USD→KES rate
+  const [usdToKesRate, setUsdToKesRate] = useState<number>(130);
+
+  useEffect(() => {
+    const loadRate = async () => {
+      try {
+        const rates = await cryptoConverter.getConversionRates();
+        // rates.kes is USD→KES divisor per existing usage; 1 USD = (1 / rates.kes) KES
+        const computed = 1 / rates.kes;
+        if (isFinite(computed) && computed > 0) setUsdToKesRate(computed);
+      } catch {
+        // keep default fallback
+      }
+    };
+    loadRate();
+  }, []);
+
   const getKESEquivalent = () => {
     const usdAmount = getTotalUSDValue();
-    const kesRate = 130; // 1 USD = 130 KES (you can make this dynamic later)
-    return usdAmount * kesRate;
+    return usdAmount * usdToKesRate;
   };
 
 
@@ -519,7 +535,7 @@ const Home = () => {
               
               {/* Exchange Rate */}
               <p className="text-sm mt-2 text-white">
-                Current Rate: 1 USD = 130.00 KES
+                Current Rate: 1 USD = {usdToKesRate.toFixed(2)} KES
               </p>
               
               {/* Chain-specific balances */}
