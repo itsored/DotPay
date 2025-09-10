@@ -288,13 +288,24 @@ const Player = dynamic(
   { ssr: false }
 );
 import { useAuth } from "@/context/AuthContext";
+import { useBusiness } from "@/context/BusinessContext";
 import { useOptimizedBalance } from "@/hooks/useOptimizedBalance";
 import { BalanceSkeleton, BalanceErrorState, BalanceEmptyState } from "@/components/ui/balance-skeleton";
 import { RecentTransactions } from "@/components/transactions/RecentTransactions";
 import { cryptoConverter } from "@/lib/crypto-converter";
+import { BusinessList } from "@/components/business/BusinessList";
 
 const Home = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { 
+    currentBusiness, 
+    isPinVerified, 
+    switchToBusiness, 
+    verifyBusinessPin,
+    setBusinessPin,
+    businessAccounts,
+    loadBusinessAccounts
+  } = useBusiness();
   const { balance, chainBalance, loading, error, fetchAllBalances, fetchChainBalance } = useOptimizedBalance();
 
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // Opens the Logout Loading Dialog
@@ -308,7 +319,9 @@ const Home = () => {
       router.replace("/login");
     }
     console.log("User:", user);
-  }, [router, isAuthenticated, user]);
+    console.log("Business accounts:", businessAccounts);
+    console.log("Current business:", currentBusiness);
+  }, [router, isAuthenticated, user, businessAccounts, currentBusiness]);
 
   const handleSend = () => {
     router.replace("/crypto");
@@ -338,6 +351,12 @@ const Home = () => {
   // Handle settings click
   const handleSettings = () => {
     router.push("/settings");
+  };
+
+  // Handle business account selection
+  const handleBusinessSelect = (businessId: string) => {
+    console.log('Business selected:', businessId);
+    // The BusinessList component handles PIN verification internally
   };
 
   // Handle chain selection
@@ -437,7 +456,16 @@ const Home = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Image src={UserIcon} alt="tree" />
+              <Image 
+                src={UserIcon} 
+                alt="tree" 
+                onClick={() => {
+                  // Load business accounts when user opens dropdown
+                  if (user?.id && businessAccounts.length === 0) {
+                    loadBusinessAccounts();
+                  }
+                }}
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel className="flex items-center gap-2">
@@ -451,6 +479,31 @@ const Home = () => {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
+              
+              {/* Business Account Switcher */}
+              {currentBusiness ? (
+                <DropdownMenuItem 
+                  onClick={() => {
+                    console.log('Switch to Business clicked');
+                    router.push('/business/home');
+                  }}
+                  className="hover:bg-blue-50"
+                >
+                  <UserPlus className="mr-2 h-4 w-4 text-blue-600" />
+                  <span className="text-blue-600 font-medium">Switch to {currentBusiness.businessName}</span>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem 
+                  onClick={() => {
+                    console.log('Browse Business Accounts clicked');
+                    router.push('/business');
+                  }}
+                  className="hover:bg-blue-50"
+                >
+                  <UserPlus className="mr-2 h-4 w-4 text-blue-600" />
+                  <span className="text-blue-600 font-medium">Business Accounts</span>
+                </DropdownMenuItem>
+              )}
               
               <DropdownMenuSeparator />
               
@@ -501,7 +554,9 @@ const Home = () => {
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-2">
-            <h3 className="text-white">Wallet Balance</h3>
+            <h3 className="text-white">
+              {currentBusiness ? `${currentBusiness.businessName} Balance` : 'Wallet Balance'}
+            </h3>
             <button
               onClick={handleRefresh}
               disabled={loading}
@@ -513,6 +568,16 @@ const Home = () => {
               </svg>
             </button>
           </div>
+          
+          {/* Current Account Indicator */}
+          {currentBusiness && (
+            <div className="mb-4 p-2 bg-[#0795B0]/20 border border-[#0795B0] rounded-lg">
+              <p className="text-sm text-[#0795B0] text-center">
+                🏢 Business Account: {currentBusiness.businessName} ({currentBusiness.merchantId})
+                {!isPinVerified && <span className="ml-2 text-yellow-400">⚠️ PIN Required</span>}
+              </p>
+            </div>
+          )}
           
           {loading && !getCurrentBalance() ? (
             <BalanceSkeleton />
@@ -613,10 +678,11 @@ const Home = () => {
           </div>
           
           <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6">
-            <RecentTransactions />
+            <RecentTransactions showDebug={false} />
           </div>
         </div>
       </article>
+
     </section>
   );
 };

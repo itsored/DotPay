@@ -286,63 +286,7 @@ export const SendTokenForm: React.FC = () => {
             </div>
           )}
 
-          {/* Debug Info - Temporary */}
-          <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500 rounded-md">
-            <h4 className="text-sm font-semibold text-blue-300 mb-2">🔍 Debug Info:</h4>
-            <div className="text-xs text-gray-300 space-y-1">
-              <p><strong>Loading Wallet:</strong> {loadingWallet ? '⏳ Loading...' : '✅ Loaded'}</p>
-              <p><strong>Detected Wallet:</strong> {currentUserAddress || 'Not found'}</p>
-              <p><strong>Auth Token:</strong> {localStorage.getItem('nexuspay_token') ? '✅ Present' : '❌ Missing'}</p>
-              <p><strong>User Data:</strong> {localStorage.getItem('nexuspay_user') ? '✅ Present' : '❌ Missing'}</p>
-            </div>
-            <div className="flex space-x-2 mt-2">
-              <button
-                onClick={async () => {
-                  console.log('🔍 Refreshing wallet address...');
-                  try {
-                    const address = await getCurrentUserAddress();
-                    console.log('Fresh wallet address:', address);
-                    setCurrentUserAddress(address);
-                  } catch (error) {
-                    console.error('Failed to refresh wallet address:', error);
-                  }
-                }}
-                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                Refresh Wallet
-              </button>
-              <button
-                onClick={async () => {
-                  console.log('🔍 Testing API connection...');
-                  try {
-                    // Test with a simple API call that requires authentication
-                    const response = await fetch('http://localhost:8000/api/token/balance', {
-                      headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
-                        'Content-Type': 'application/json'
-                      }
-                    });
-                    console.log('API Test Response:', response.status, response.statusText);
-                    if (response.status === 401) {
-                      alert('❌ Authentication failed! Your token may be expired or invalid.');
-                    } else if (response.ok) {
-                      const data = await response.json();
-                      console.log('API Test Data:', data);
-                      alert('✅ Authentication working! Token is valid.');
-                    } else {
-                      alert(`⚠️ API returned status ${response.status}`);
-                    }
-                  } catch (error) {
-                    console.error('API test failed:', error);
-                    alert('❌ API test failed. Check console for details.');
-                  }
-                }}
-                className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-              >
-                Test Auth
-              </button>
-            </div>
-          </div>
+          
 
 
 

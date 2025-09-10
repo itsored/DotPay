@@ -7,6 +7,7 @@ import { BalanceProvider } from "@/context/BalanceContext";
 import { ChainProvider } from "@/context/ChainContext";
 import { WalletProvider } from "@/context/WalletContext";
 import { PWAProvider } from "@/context/PWAContext";
+import { BusinessProvider } from "@/context/BusinessContext";
 import ClientOnly from "./ClientOnly";
 import { ReactQueryClientProvider } from "@/providers/ReactQueryClientProvider";
 import { Toaster } from "react-hot-toast";
@@ -157,16 +158,18 @@ export default function RootLayout({
         <ReactQueryClientProvider>
           <PWAProvider>
             <AuthProvider>
-              <WalletProvider>
-                <ChainProvider>
-                  <BalanceProvider>
-                    <ClientOnly>{children}</ClientOnly>
-                    <PWAInstallPrompt />
-                    <PWAUpdateNotification />
-                    <Toaster />
-                  </BalanceProvider>
-                </ChainProvider>
-              </WalletProvider>
+              <BusinessProvider>
+                <WalletProvider>
+                  <ChainProvider>
+                    <BalanceProvider>
+                      <ClientOnly>{children}</ClientOnly>
+                      <PWAInstallPrompt />
+                      <PWAUpdateNotification />
+                      <Toaster />
+                    </BalanceProvider>
+                  </ChainProvider>
+                </WalletProvider>
+              </BusinessProvider>
             </AuthProvider>
           </PWAProvider>
         </ReactQueryClientProvider>

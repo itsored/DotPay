@@ -128,8 +128,31 @@ export const mpesaAPI = {
     try {
       console.log('Making payWithCrypto API call with data:', data);
       console.log('API client headers:', apiClient.defaults.headers);
-      
-      const response = await apiClient.post('/mpesa/pay-with-crypto', data);
+
+      // Ensure Authorization header is attached explicitly for this call
+      const rawToken =
+        localStorage.getItem('nexuspay_token') ||
+        localStorage.getItem('user') ||
+        localStorage.getItem('nexuspay_user');
+      let authHeader: string | undefined;
+      if (rawToken) {
+        try {
+          let tokenCandidate: string = rawToken;
+          if (tokenCandidate.startsWith('{')) {
+            const parsed = JSON.parse(tokenCandidate);
+            tokenCandidate = parsed?.data?.token || parsed?.token || '';
+          }
+          tokenCandidate = tokenCandidate.replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
+          if (tokenCandidate) authHeader = `Bearer ${tokenCandidate}`;
+        } catch (_) {
+          const sanitized = rawToken.replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
+          authHeader = `Bearer ${sanitized}`;
+        }
+      }
+
+      const response = await apiClient.post('/mpesa/pay-with-crypto', data, {
+        headers: authHeader ? { Authorization: authHeader } : undefined,
+      });
       console.log('payWithCrypto API response:', response);
       return response.data;
     } catch (error: any) {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { authAPI } from "@/lib/auth";
 import { useWallet } from "../../context/WalletContext";
 import { useChain } from "../../context/ChainContext";
 import { useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ import * as Yup from "yup";
 import TextInput from "../../components/inputs/TextInput";
 import PasswordInput from "../../components/inputs/PasswordInput";
 import { formatPhoneNumberToE164, validateE164PhoneNumber } from "../../lib/phone-utils";
+import { BusinessSettings } from "../../components/business/BusinessSettings";
 
 const SettingsPage = () => {
   const { user, isAuthenticated, getGoogleConfig } = useAuth();
@@ -170,13 +172,20 @@ const SettingsPage = () => {
   const loadUserProfile = async () => {
     try {
       setProfileLoading(true);
-      // Since the backend endpoint doesn't exist yet, we'll use the user data we have
-      // and simulate the profile loading
+      // Fetch stable user id from backend
+      let stableId = user?.id || '';
+      try {
+        const me = await authAPI.getMe();
+        stableId = (me as any)?.data?.user?.id || stableId;
+      } catch (e) {
+        // fallback to existing
+      }
+
       setUserProfile({
-        id: user?.id || `user_${Date.now()}`, // Generate a temporary ID if none exists
+        id: stableId || user?.id || `user_${Date.now()}`,
         email: user?.email,
         phoneNumber: user?.phoneNumber,
-        googleId: user?.googleId || user?.email, // Use email as googleId if no specific googleId
+        googleId: user?.googleId || user?.email,
         authMethods: [
           ...(user?.phoneNumber ? ['phone'] : []),
           ...(user?.email ? ['google'] : [])
@@ -606,6 +615,9 @@ const SettingsPage = () => {
                 Create Business Account
               </Button>
             </div>
+
+            {/* Business Settings */}
+            <BusinessSettings />
           </div>
         </article>
 

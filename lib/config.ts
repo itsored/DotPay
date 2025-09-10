@@ -4,31 +4,29 @@
  */
 
 export const getApiBaseUrl = (): string => {
-  // Check for environment variable first
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
-  }
-  
-  // Fallback to environment-based URLs
-  if (process.env.NODE_ENV === 'production') {
+  // Prefer hostname-based auto-detection so local dev always points to localhost automatically
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1';
+    if (isLocal) return 'http://localhost:8000/api';
     return 'https://api.nexuspaydefi.xyz/api';
   }
-  
-  return 'http://localhost:8000/api';
+
+  // Server-side (build/runtime) fallback
+  const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  return isProd ? 'https://api.nexuspaydefi.xyz/api' : 'http://localhost:8000/api';
 };
 
 export const getApiBaseUrlWithoutPath = (): string => {
-  // Check for environment variable first
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL.replace('/api', '');
-  }
-  
-  // Fallback to environment-based URLs
-  if (process.env.NODE_ENV === 'production') {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1';
+    if (isLocal) return 'http://localhost:8000';
     return 'https://api.nexuspaydefi.xyz';
   }
-  
-  return 'http://localhost:8000';
+
+  const isProd = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  return isProd ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000';
 };
 
 // Simple function for fetch calls

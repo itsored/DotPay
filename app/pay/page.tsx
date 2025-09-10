@@ -4,12 +4,14 @@ import React from 'react';
 import { PayMerchantForm } from '@/components/crypto/PayMerchantForm';
 import { PayWithCryptoForm } from '@/components/mpesa/PayWithCryptoForm';
 import { CryptoToMpesaForm } from '@/components/mpesa/CryptoToMpesaForm';
+import { QRCodeScanner } from '@/components/crypto/QRCodeScanner';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { useRouter } from 'next/navigation';
 
 export default function PayPage() {
   const router = useRouter();
-  const [tab, setTab] = React.useState<'merchant' | 'bills' | 'crypto-mpesa'>('merchant');
+  const [tab, setTab] = React.useState<'merchant' | 'bills' | 'crypto-mpesa' | 'scan'>('merchant');
+  const [showQRScanner, setShowQRScanner] = React.useState(false);
 
   const handleBackToHome = () => {
     router.push('/home');
@@ -34,7 +36,7 @@ export default function PayPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-center gap-3 mb-2">
+        <div className="flex justify-center gap-3 mb-2 flex-wrap">
           <button
             onClick={() => setTab('merchant')}
             className={`px-4 py-2 rounded-md border text-sm ${tab === 'merchant' ? 'bg-[#0795B0] text-white border-[#0795B0]' : 'bg-transparent text-white border-[#0795B0] hover:bg-[#0A0E0E]'}`}
@@ -53,6 +55,12 @@ export default function PayPage() {
           >
             📱 Send Crypto → M-Pesa
           </button>
+          <button
+            onClick={() => setShowQRScanner(true)}
+            className={`px-4 py-2 rounded-md border text-sm ${tab === 'scan' ? 'bg-[#0795B0] text-white border-[#0795B0]' : 'bg-transparent text-white border-[#0795B0] hover:bg-[#0A0E0E]'}`}
+          >
+            📷 Scan QR Code
+          </button>
         </div>
       </article>
       
@@ -63,6 +71,14 @@ export default function PayPage() {
           {tab === 'crypto-mpesa' && <CryptoToMpesaForm />}
         </div>
       </article>
+
+      {/* QR Code Scanner Modal */}
+      {showQRScanner && (
+        <QRCodeScanner 
+          onClose={() => setShowQRScanner(false)}
+          onScanSuccess={() => setShowQRScanner(false)}
+        />
+      )}
     </section>
   );
 }

@@ -21,6 +21,7 @@ import {
   SignUpFormData,
 } from "@/types/form-types";
 import useAxios from "@/hooks/useAxios";
+import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
 import LoadingDialog from "@/components/dialog/LoadingDialog";
 import ErrorDialog from "@/components/dialog/ErrorDialog";
@@ -28,6 +29,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import SuccessDialog from "@/components/dialog/SuccessDialog";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
+import { businessV2API } from "@/lib/business-v2";
 
 // A wrapper or assertion to cast the useAuth hook's return type
 const useAuth = () => useAuthOriginal() as unknown as AuthContextType;
@@ -44,6 +46,30 @@ const SignupBusiness = () => {
   const [errorMessage, setErrorMessage] = useState(""); // Store specific error message
   const [existingBusinesses, setExistingBusinesses] = useState<any[]>([]); // Track existing business accounts
   const api = useAxios();
+  // Forgot Password Dialog state
+  const [showForgotPwd, setShowForgotPwd] = useState(false);
+  const [forgotStep, setForgotStep] = useState<'request' | 'confirm'>('request');
+  const [fpMerchantId, setFpMerchantId] = useState("");
+  const [fpPhone, setFpPhone] = useState("");
+  const [fpOtp, setFpOtp] = useState("");
+  const [fpNewPassword, setFpNewPassword] = useState("");
+  const buildAuthHeader = () => {
+    try {
+      const ctxToken = (user as any)?.token as string | undefined;
+      const raw = ctxToken || localStorage.getItem('nexuspay_token') || localStorage.getItem('user') || localStorage.getItem('nexuspay_user');
+      if (!raw) return undefined;
+      let token = raw as string;
+      if (token.startsWith('{')) {
+        const parsed = JSON.parse(token as string);
+        token = parsed?.data?.token || parsed?.token || parsed?.user?.token || '';
+      }
+      token = token.replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
+      const header = token ? { Authorization: `Bearer ${token}` } : undefined;
+      return header;
+    } catch {
+      return undefined;
+    }
+  };
   const [userDetails, setUserDetails] = useState<SignUpBusinessFormData>({
     userId: "",
     ownerName: "",
@@ -111,66 +137,77 @@ const SignupBusiness = () => {
     formState: { errors: otpErrors },
   } = useForm<OTPFormData>();
 
-  // Mutation to Initiate Register User
+  // Mutation to initiate business auth (new endpoint with fallback to legacy)
   const initiateRegisterUser = useMutation({
-    mutationFn: (initiateRegisterUserPost: SignUpBusinessFormData) => {
+    mutationFn: async (initiateRegisterUserPost: SignUpBusinessFormData) => {
       setOpenSigningUp(true);
-      
+
       // Ensure phone number has + prefix for registration
-      const formattedPhoneNumber = initiateRegisterUserPost.phoneNumber.toString().startsWith('+') 
-        ? initiateRegisterUserPost.phoneNumber 
+      const formattedPhoneNumber = initiateRegisterUserPost.phoneNumber.toString().startsWith('+')
+        ? initiateRegisterUserPost.phoneNumber
         : `+${initiateRegisterUserPost.phoneNumber}`;
-        
-      console.log("Sending business registration data:", {
-        ...initiateRegisterUserPost,
+
+      console.log("Requesting business auth OTP (new flow):", {
         phoneNumber: formattedPhoneNumber,
+        context: 'business_creation',
       });
-      
-      return api.post(
-        "business/request-upgrade",
-        {
-          userId: initiateRegisterUserPost.userId || 'temp_user_id', // Will be replaced with actual user ID
-          phoneNumber: formattedPhoneNumber,
-          businessName: initiateRegisterUserPost.businessName,
-          ownerName: initiateRegisterUserPost.ownerName,
-          location: initiateRegisterUserPost.location,
-          businessType: initiateRegisterUserPost.businessType || 'General Business',
-        },
-        {
-          method: "POST",
-          headers: {
-            'Authorization': `Bearer ${user?.token || ''}`,
-            'Content-Type': 'application/json'
-          }
+
+      // Save details for OTP verification
+      setUserDetails({ ...initiateRegisterUserPost, phoneNumber: formattedPhoneNumber });
+
+      try {
+        // New: request OTP via business auth route with explicit Authorization
+        const headers = buildAuthHeader();
+        console.log('[business] request-otp header present:', !!headers?.Authorization);
+        return await axios.post(
+          "http://localhost:8000/api/business/auth/request-otp",
+          {
+            phoneNumber: formattedPhoneNumber,
+            context: 'business_creation',
+          },
+          { headers }
+        );
+      } catch (error: any) {
+        const routeNotFound =
+          error?.response?.status === 404 ||
+          error?.response?.data?.error?.code === 'ROUTE_NOT_FOUND' ||
+          /Route .*request-otp not found/i.test(error?.response?.data?.message || '');
+        if (routeNotFound) {
+          console.warn('business/auth/request-otp not found. Falling back to legacy request-upgrade.');
+          const headers = buildAuthHeader();
+          return await axios.post(
+            "http://localhost:8000/api/business/request-upgrade",
+            {
+              userId: initiateRegisterUserPost.userId || 'temp_user_id',
+              phoneNumber: formattedPhoneNumber,
+              businessName: initiateRegisterUserPost.businessName,
+              ownerName: initiateRegisterUserPost.ownerName,
+              location: initiateRegisterUserPost.location,
+              businessType: initiateRegisterUserPost.businessType || 'General Business',
+            },
+            { headers }
+          );
         }
-      );
+        throw error;
+      }
     },
     onSuccess: (data, variables, context) => {
-      console.log("Business registration success:", data);
+      console.log("Business auth/request-otp success or legacy request-upgrade success:", data);
       setOpenSigningUp(false);
-      setUserDetails(variables); // Store user details with the modified phone number
-      
-      // Show existing businesses count if available
-      if (data.data?.existingBusinesses) {
-        console.log(`User has ${data.data.existingBusinesses.length} existing business accounts`);
-        setExistingBusinesses(data.data.existingBusinesses);
-      }
-      
-      // Always show OTP dialog since OTP is logged in server
+
+      // Prompt for OTP (server logs/ sends it)
       setOpenOTP(true);
     },
-    onError: (error: any, variables, context) => {
-      // Handle errors, e.g., show a message to the user
-      console.error("Failed to initiate business sign-up:", error);
+    onError: (error: any) => {
+      console.error("Failed to request business auth OTP:", error);
       console.error("Error response:", error.response?.data);
       setOpenSigningUp(false);
-      
-      // Get user-friendly error message
+
       const specificMessage = getErrorMessage(error);
       setErrorMessage(specificMessage);
       setOpenAccErr(true);
     },
-    onSettled: (data, error, variables, context) => {
+    onSettled: () => {
       setOpenSigningUp(false);
     },
   });
@@ -210,75 +247,133 @@ const SignupBusiness = () => {
     },
   });
 
+  // Verify OTP using new endpoint; if missing, fall back to legacy complete-upgrade
   const verifyUser = useMutation({
-    mutationFn: (verifyUserPost) => {
+    mutationFn: async () => {
       // Ensure phone number has + prefix for verification
-      const formattedPhoneNumber = userDetails.phoneNumber.toString().startsWith('+') 
-        ? userDetails.phoneNumber 
+      const formattedPhoneNumber = userDetails.phoneNumber.toString().startsWith('+')
+        ? userDetails.phoneNumber
         : `+${userDetails.phoneNumber}`;
-        
-      console.log("Completing business creation with data:", {
-        phoneNumber: formattedPhoneNumber,
-        otp: tillNumberParts,
-      });
-      
-      return api.post(
-        "business/complete-upgrade",
-        {
-          userId: userDetails.userId || 'temp_user_id',
-          phoneNumber: formattedPhoneNumber,
-          otp: tillNumberParts,
-          businessName: userDetails.businessName,
-          ownerName: userDetails.ownerName,
-          location: userDetails.location,
-          businessType: userDetails.businessType || 'General Business',
-        },
-        {
-          method: "POST",
-          headers: {
-            'Authorization': `Bearer ${user?.token || ''}`,
-            'Content-Type': 'application/json'
-          }
+
+      console.log("Verifying business auth OTP:", { phoneNumber: formattedPhoneNumber, context: 'business_creation' });
+
+      try {
+        // New: verify OTP to elevate session with explicit Authorization
+        const headers = buildAuthHeader();
+        console.log('[business] verify-otp header present:', !!headers?.Authorization);
+        await axios.post(
+          "http://localhost:8000/api/business/auth/verify-otp",
+          {
+            phoneNumber: formattedPhoneNumber,
+            otp: tillNumberParts,
+            context: 'business_creation',
+          },
+          { headers }
+        );
+
+        // Then perform the strict action
+        const upgradeResponse = await axios.post(
+          "http://localhost:8000/api/business/request-upgrade",
+          {
+            userId: userDetails.userId || 'temp_user_id',
+            phoneNumber: formattedPhoneNumber,
+            businessName: userDetails.businessName,
+            ownerName: userDetails.ownerName,
+            location: userDetails.location,
+            businessType: userDetails.businessType || 'General Business',
+          },
+          { headers }
+        );
+        return upgradeResponse;
+      } catch (error: any) {
+        const routeNotFound =
+          error?.response?.status === 404 ||
+          error?.response?.data?.error?.code === 'ROUTE_NOT_FOUND' ||
+          /Route .*verify-otp not found/i.test(error?.response?.data?.message || '');
+        if (routeNotFound) {
+          console.warn('business/auth/verify-otp not found. Falling back to legacy complete-upgrade.');
+          const headers = buildAuthHeader();
+          const legacyResponse = await axios.post(
+            "http://localhost:8000/api/business/complete-upgrade",
+            {
+              userId: userDetails.userId || 'temp_user_id',
+              phoneNumber: formattedPhoneNumber,
+              otp: tillNumberParts,
+              businessName: userDetails.businessName,
+              ownerName: userDetails.ownerName,
+              location: userDetails.location,
+              businessType: userDetails.businessType || 'General Business',
+            },
+            { headers }
+          );
+          return legacyResponse;
         }
-      );
+        throw error;
+      }
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data) => {
       console.log("Business creation success:", data);
       setOpenConfirmingOTP(false);
-      
-      // Show business creation details
+
+      // Optionally show details from response if present
       if (data.data?.merchantId) {
         console.log("✅ Business Account Created Successfully!");
         console.log("Merchant ID:", data.data.merchantId);
-        console.log("Business Wallet:", data.data.walletAddress);
-        console.log("Credit Limit:", data.data.creditLimit);
       }
-      
-      // If verification returns a token, user is fully registered and logged in
-      if (data.data?.token) {
-        login(data);
-        setOpenMerchantSuccess(true);
-        setTimeout(() => {
-          router.replace("/business"); // Redirect to business dashboard
-        }, 2000);
-      } else {
-        // Otherwise, proceed with login
-        loginUser.mutate(userDetails);
-      }
+
+      setOpenMerchantSuccess(true);
+      setTimeout(() => {
+        router.replace("/business");
+      }, 1500);
     },
-    onError: (error: any, variables, context) => {
-      // Handle errors, e.g., invalid OTP
-      console.error("Failed to complete business creation:", error);
+    onError: (error: any) => {
+      console.error("Failed to verify OTP or create business:", error);
       console.error("Error response:", error.response?.data);
-      
-      // Get user-friendly error message
+
       const specificMessage = getErrorMessage(error);
       setErrorMessage(specificMessage);
       setOpenAccErr(true);
     },
-    onSettled: (data, error, variables, context) => {
-      console.log("OTP verification settled:", { data, error });
+    onSettled: (data, error) => {
+      console.log("OTP verification and creation settled:", { data, error });
     },
+  });
+
+  // Forgot Password Mutations (Business Owner)
+  const forgotRequestMutation = useMutation({
+    mutationFn: async () => {
+      return businessV2API.passwordResetRequest({
+        merchantId: fpMerchantId || undefined,
+        phoneNumber: fpPhone || undefined,
+      });
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || 'OTP sent');
+      setForgotStep('confirm');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to send OTP');
+    }
+  });
+
+  const forgotConfirmMutation = useMutation({
+    mutationFn: async () => {
+      return businessV2API.passwordResetConfirm({
+        merchantId: fpMerchantId || undefined,
+        phoneNumber: fpPhone || undefined,
+        otp: fpOtp,
+        newPassword: fpNewPassword,
+      });
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || 'Password reset successful');
+      setShowForgotPwd(false);
+      setForgotStep('request');
+      setFpMerchantId(""); setFpPhone(""); setFpOtp(""); setFpNewPassword("");
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to reset password');
+    }
   });
 
   const verifyOTP = async (otpData: OTPFormData) => {
@@ -310,7 +405,8 @@ const SignupBusiness = () => {
   };
 
   return (
-    <section className="home-background p-3">
+    <>
+    <section className="app-background min-h-screen bg-[#0A0E0E]">
       <Dialog open={openOTP} onOpenChange={setOpenOTP}>
         <DialogContent className="bg-white">
           <DialogHeader>
@@ -376,7 +472,7 @@ const SignupBusiness = () => {
         setOpenLoading={setOpenSigningUp}
       />
       <LoadingDialog
-        message="Sending Business OTP Code...."
+        message="Verifying OTP and creating business..."
         openLoading={openConfirmingOTP}
         setOpenLoading={setOpenConfirmingOTP}
       />
@@ -391,87 +487,12 @@ const SignupBusiness = () => {
         setOpenError={setOpenAccErr}
       />
       <article>
-        <h2 className="text-2xl text-white font-bold">
+        <h2 className="text-4xl text-white font-bold">
           Sign Up to NexusPay For Business
         </h2>
         <h4 className="text-white my-5">
           Enter your Details to Sign Up to NexusPay
         </h4>
-        <p className="text-sm text-gray-300 mb-4">
-          💡 <strong>Optimized System:</strong> One personal wallet per phone number, multiple business accounts allowed.
-        </p>
-        
-        {/* User ID Information */}
-        {isAuthenticated && user?.id ? (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <h3 className="text-sm font-medium text-green-300">
-                Logged In User Detected
-              </h3>
-            </div>
-            <p className="text-sm text-green-200 mb-2">
-              Your User ID will be automatically filled: <span className="font-mono text-green-300">{user.id}</span>
-            </p>
-            <p className="text-xs text-green-300">
-              ✅ You can create business accounts linked to your personal wallet
-            </p>
-          </div>
-        ) : (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <h3 className="text-sm font-medium text-yellow-300">
-                User ID Required
-              </h3>
-            </div>
-            <p className="text-sm text-yellow-200 mb-2">
-              You need your User ID from your personal account to create a business account.
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => router.push("/login")}
-                className="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded"
-              >
-                Login First
-              </button>
-              <button
-                onClick={() => router.push("/profile")}
-                className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-              >
-                Get User ID
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* Existing Businesses Info */}
-        {existingBusinesses.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <h3 className="text-sm font-medium text-blue-900">
-                Existing Business Accounts ({existingBusinesses.length})
-              </h3>
-            </div>
-            <p className="text-sm text-blue-700 mb-3">
-              You already have {existingBusinesses.length} business account{existingBusinesses.length > 1 ? 's' : ''} linked to this phone number.
-            </p>
-            <div className="space-y-2">
-              {existingBusinesses.slice(0, 3).map((business, index) => (
-                <div key={index} className="flex items-center justify-between text-xs text-blue-600">
-                  <span className="font-medium">{business.businessName}</span>
-                  <span className="text-blue-500">ID: {business.merchantId}</span>
-                </div>
-              ))}
-              {existingBusinesses.length > 3 && (
-                <div className="text-xs text-blue-500">
-                  +{existingBusinesses.length - 3} more business account{existingBusinesses.length - 3 > 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         
         {/* SignUp using Formik */}
         <Formik
@@ -540,16 +561,6 @@ const SignupBusiness = () => {
               type="text"
               placeholder="Enter your User ID from personal account"
             />
-            <div className="text-xs text-gray-300 mb-4 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-              <p className="mb-2">
-                💡 <strong>Don&apos;t have your User ID?</strong>
-              </p>
-              <div className="space-y-1">
-                <p>1. <button onClick={() => router.push("/login")} className="text-blue-300 hover:text-blue-200 underline">Login to your account</button></p>
-                <p>2. <button onClick={() => router.push("/settings")} className="text-blue-300 hover:text-blue-200 underline">Go to your settings</button></p>
-                <p>3. Copy your User ID and return here</p>
-              </div>
-            </div>
             <TextInput
               label="Business Name"
               name="businessName"
@@ -583,7 +594,7 @@ const SignupBusiness = () => {
             <div className="flex flex-col justify-start mb-5">
               <p className="text-[#909090] p-1 text-sm font-semibold">
                 Have an account?{" "}
-                <Link href="/login" className="hover:text-white text-gray-300">
+                <Link href="/login" className="hover:text-white">
                   Login
                 </Link>
               </p>
@@ -599,32 +610,86 @@ const SignupBusiness = () => {
             >
               Create Business
             </button>
+
           </Form>
         </Formik>
 
-        {/* Google Sign-In */}
-        <div className="mt-6">
-          <div className="flex items-center justify-center mb-4">
-            <div className="border-t border-gray-300 flex-grow"></div>
-            <span className="px-4 text-white text-sm">or</span>
-            <div className="border-t border-gray-300 flex-grow"></div>
-          </div>
-          <GoogleSignIn 
-            mode="signup"
-            onSuccess={() => {
-              setOpenSigningUp(true);
-              setTimeout(() => {
-                router.replace("/home");
-              }, 1000);
-            }}
-            onError={(error) => {
-              console.error("Google signup error:", error);
-              setOpenAccErr(true);
-            }}
-          />
-        </div>
       </article>
     </section>
+
+    {/* Business Forgot Password Dialog */}
+    <Dialog open={showForgotPwd} onOpenChange={setShowForgotPwd}>
+      <DialogContent className="bg-white max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-black text-xl font-bold">
+            {forgotStep === 'request' ? 'Reset Business Owner Password' : 'Confirm New Password'}
+          </DialogTitle>
+        </DialogHeader>
+        {forgotStep === 'request' ? (
+          <div className="space-y-3">
+            <p className="text-gray-700 text-sm">Enter either your Merchant ID or Business Phone Number.</p>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Merchant ID</label>
+              <input
+                value={fpMerchantId}
+                onChange={(e) => setFpMerchantId(e.target.value)}
+                placeholder="NX-582917"
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div className="text-center text-xs text-gray-500">or</div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Business Phone (+E.164)</label>
+              <input
+                value={fpPhone}
+                onChange={(e) => setFpPhone(e.target.value)}
+                placeholder="+2547xxxxxxx"
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <button
+              onClick={() => forgotRequestMutation.mutate()}
+              disabled={forgotRequestMutation.isPending || (!fpMerchantId && !fpPhone)}
+              className="w-full bg-black text-white rounded py-2 mt-2 disabled:opacity-50"
+            >
+              {forgotRequestMutation.isPending ? 'Sending OTP...' : 'Send OTP'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-gray-700 text-sm">Enter the OTP sent and your new password.</p>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">OTP</label>
+              <input
+                value={fpOtp}
+                onChange={(e) => setFpOtp(e.target.value)}
+                placeholder="123456"
+                maxLength={6}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">New Password</label>
+              <input
+                type="password"
+                value={fpNewPassword}
+                onChange={(e) => setFpNewPassword(e.target.value)}
+                placeholder="StrongPass#2025"
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <button
+              onClick={() => forgotConfirmMutation.mutate()}
+              disabled={forgotConfirmMutation.isPending || !fpOtp || !fpNewPassword}
+              className="w-full bg-black text-white rounded py-2 mt-2 disabled:opacity-50"
+            >
+              {forgotConfirmMutation.isPending ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
