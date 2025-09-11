@@ -297,7 +297,7 @@ export const BusinessList: React.FC<BusinessListProps> = ({
         <div className="text-center py-8 border rounded-lg border-[#0795B0]">
           <Building2 className="h-12 w-12 text-[#0795B0] mx-auto mb-4" />
           <h4 className="text-lg font-medium text-white mb-2">No Business Accounts</h4>
-          <p className="text-gray-300 mb-4">You haven't created any business accounts yet.</p>
+          <p className="text-gray-300 mb-4">You haven&apos;t created any business accounts yet.</p>
           {showCreateButton && (
             <Button
               onClick={() => window.location.href = '/signup/business'}

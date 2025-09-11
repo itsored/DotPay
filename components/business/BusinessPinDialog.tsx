@@ -374,7 +374,7 @@ export const BusinessPinDialog: React.FC<BusinessPinDialogProps> = ({
         return (
           <div className="space-y-4">
             <p className="text-gray-700 text-sm">
-              To set a PIN for <strong>{businessName}</strong>, we'll send a verification code to your registered phone number.
+              To set a PIN for <strong>{businessName}</strong>, we&apos;ll send a verification code to your registered phone number.
             </p>
             <Button
               onClick={handleSetPin}

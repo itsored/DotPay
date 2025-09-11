@@ -435,7 +435,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ className = 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 <strong>Note:</strong> You can set up a PIN for an existing business account using your Merchant ID or Phone Number. 
-                If you don't have a business account yet, create one first.
+                If you don&apos;t have a business account yet, create one first.
               </p>
             </div>
           )}
@@ -456,8 +456,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ className = 
                 </p>
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> This is for setting up a PIN on an existing business account. 
-                    If you don't have a business account, create one first.
+                    <strong>Note:</strong> This is for setting up a PIN on an existing business account.
+                    If you don&apos;t have a business account, create one first.
                   </p>
                 </div>
                 <div>
@@ -560,8 +560,8 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ className = 
                 </p>
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> This is for resetting a PIN on an existing business account. 
-                    If you don't have a business account, create one first.
+                    <strong>Note:</strong> This is for resetting a PIN on an existing business account.
+                    If you don&apos;t have a business account, create one first.
                   </p>
                 </div>
                 <div>

@@ -297,7 +297,7 @@ export const QRCodeScanner: React.FC<QRCodeScannerProps> = ({
           <ul className="text-xs text-gray-400 space-y-1">
             <li>• Point your camera at a business QR code</li>
             <li>• The QR code should contain business payment information</li>
-            <li>• Once scanned, you'll be able to make a payment</li>
+            <li>• Once scanned, you&apos;ll be able to make a payment</li>
             <li>• Make sure you have good lighting</li>
           </ul>
         </div>
