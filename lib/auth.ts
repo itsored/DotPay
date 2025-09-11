@@ -185,6 +185,11 @@ export const authAPI = {
         const response = await apiClient.get('/auth/profile');
         return response.data;
     },
+    // New: fetch current user with stable id
+    getMe: async (): Promise<AuthResponse> => {
+        const response = await apiClient.get('/auth/me');
+        return response.data;
+    },
 };
 
 // Token management utilities

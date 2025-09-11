@@ -7,6 +7,7 @@ import { BalanceProvider } from "@/context/BalanceContext";
 import { ChainProvider } from "@/context/ChainContext";
 import { WalletProvider } from "@/context/WalletContext";
 import { PWAProvider } from "@/context/PWAContext";
+import { BusinessProvider } from "@/context/BusinessContext";
 import ClientOnly from "./ClientOnly";
 import { ReactQueryClientProvider } from "@/providers/ReactQueryClientProvider";
 import { Toaster } from "react-hot-toast";
@@ -138,19 +139,37 @@ export default function RootLayout({
         <meta property="og:image" content="https://app.nexuspaydefi.xyz/icons/icon-512x512.png" />
       </head>
       <body className={inter.className}>
+        {/* Suppress console logs in production */}
+        {process.env.NODE_ENV === 'production' && (
+          <script dangerouslySetInnerHTML={{ __html: `
+            (function(){
+              var safe = function(){};
+              var methods = ['log','debug','info','warn','error'];
+              methods.forEach(function(m){try{console[m]=safe;}catch(e){}});
+              // Disable React devtools hook exposure if present
+              try{ if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                for (const k in window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                  window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k] = typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__[k] === 'function' ? function(){} : null;
+                }
+              }}catch(e){}
+            })();
+          ` }} />
+        )}
         <ReactQueryClientProvider>
           <PWAProvider>
             <AuthProvider>
-              <WalletProvider>
-                <ChainProvider>
-                  <BalanceProvider>
-                    <ClientOnly>{children}</ClientOnly>
-                    <PWAInstallPrompt />
-                    <PWAUpdateNotification />
-                    <Toaster />
-                  </BalanceProvider>
-                </ChainProvider>
-              </WalletProvider>
+              <BusinessProvider>
+                <WalletProvider>
+                  <ChainProvider>
+                    <BalanceProvider>
+                      <ClientOnly>{children}</ClientOnly>
+                      <PWAInstallPrompt />
+                      <PWAUpdateNotification />
+                      <Toaster />
+                    </BalanceProvider>
+                  </ChainProvider>
+                </WalletProvider>
+              </BusinessProvider>
             </AuthProvider>
           </PWAProvider>
         </ReactQueryClientProvider>

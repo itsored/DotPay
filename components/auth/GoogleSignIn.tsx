@@ -92,7 +92,7 @@ const GoogleSignIn: React.FC<GoogleSignInProps> = ({ mode, onSuccess, onError })
                     window.google.accounts.id.renderButton(buttonElement, { 
                       theme: 'outline', 
                       size: 'large',
-                      width: '100%',
+                      width: 240,
                       text: mode === 'login' ? 'signin_with' : 'signup_with'
                     });
                     console.log("Google button rendered successfully");

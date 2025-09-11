@@ -96,9 +96,10 @@ import Link from 'next/link';
 
 interface RecentTransactionsProps {
   className?: string;
+  showDebug?: boolean;
 }
 
-export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className = "" }) => {
+export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ className = "", showDebug = true }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -757,6 +758,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
         </div>
         
         {/* Enhanced Debug Panel */}
+        {showDebug && (
         <details className="mt-4 p-3 bg-[#1A1E1E] border border-[#0795B0] rounded-lg">
           <summary className="text-[#0795B0] text-xs cursor-pointer hover:text-[#0AA5C0]">
             🔍 Debug Info - API Data Analysis
@@ -873,6 +875,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
             </div>
           </div>
         </details>
+        )}
       </div>
 
       {/* Transaction Details Modal */}

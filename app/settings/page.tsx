@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { authAPI } from "@/lib/auth";
 import { useWallet } from "../../context/WalletContext";
 import { useChain } from "../../context/ChainContext";
 import { useRouter } from "next/navigation";
@@ -19,9 +20,10 @@ import * as Yup from "yup";
 import TextInput from "../../components/inputs/TextInput";
 import PasswordInput from "../../components/inputs/PasswordInput";
 import { formatPhoneNumberToE164, validateE164PhoneNumber } from "../../lib/phone-utils";
+import { BusinessSettings } from "../../components/business/BusinessSettings";
 
 const SettingsPage = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, getGoogleConfig } = useAuth();
   const { wallet, hasWallet, loading, initializeWallet } = useWallet();
   const { chain } = useChain();
   const router = useRouter();
@@ -89,7 +91,14 @@ const SettingsPage = () => {
     },
     onError: (error: any) => {
       console.error("Failed to add phone and password:", error);
-      toast.error("Failed to add phone and password. Please try again.");
+      if (error?.response?.status === 409) {
+        const msg = error?.response?.data?.message || 'Phone already linked or credentials conflict';
+        toast.error(msg);
+      } else if (error?.response?.status === 400) {
+        toast.error(error?.response?.data?.message || 'Invalid request');
+      } else {
+        toast.error("Failed to add phone and password. Please try again.");
+      }
     }
   });
 
@@ -119,34 +128,64 @@ const SettingsPage = () => {
     }
   }, [isAuthenticated, user]);
 
-  // Initialize Google Sign-In when component mounts
+  // Initialize Google Sign-In when component mounts with server/env client ID
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.google) {
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
-        callback: (response: any) => {
-          if (response.credential) {
-            linkGoogleMutation.mutate(response.credential);
-          } else {
-            toast.error("Failed to get Google credentials");
-          }
-        },
-        auto_select: false,
-        cancel_on_tap_outside: true
-      });
-    }
+    const initGsi = async () => {
+      try {
+        if (typeof window === 'undefined') return;
+        if (!window.google) return;
+
+        // Prefer server config; fallback to env
+        let clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+        try {
+          const config = await getGoogleConfig();
+          const serverClientId = (config as any)?.data?.clientId || (config as any)?.clientId;
+          if (serverClientId) clientId = serverClientId;
+        } catch {
+          // ignore, fallback to env
+        }
+
+        if (!clientId) {
+          console.error('Missing Google client_id for settings GSI init');
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: (response: any) => {
+            if (response.credential) {
+              linkGoogleMutation.mutate(response.credential);
+            } else {
+              toast.error("Failed to get Google credentials");
+            }
+          },
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+      } catch (e) {
+        console.error('Failed to initialize GSI on settings page', e);
+      }
+    };
+    initGsi();
   }, []);
 
   const loadUserProfile = async () => {
     try {
       setProfileLoading(true);
-      // Since the backend endpoint doesn't exist yet, we'll use the user data we have
-      // and simulate the profile loading
+      // Fetch stable user id from backend
+      let stableId = user?.id || '';
+      try {
+        const me = await authAPI.getMe();
+        stableId = (me as any)?.data?.user?.id || stableId;
+      } catch (e) {
+        // fallback to existing
+      }
+
       setUserProfile({
-        id: user?.id || `user_${Date.now()}`, // Generate a temporary ID if none exists
+        id: stableId || user?.id || `user_${Date.now()}`,
         email: user?.email,
         phoneNumber: user?.phoneNumber,
-        googleId: user?.googleId || user?.email, // Use email as googleId if no specific googleId
+        googleId: user?.googleId || user?.email,
         authMethods: [
           ...(user?.phoneNumber ? ['phone'] : []),
           ...(user?.email ? ['google'] : [])
@@ -305,10 +344,10 @@ const SettingsPage = () => {
         </article>
 
         {/* Main content */}
-        <article className="mt-8 flex flex-col items-center p-5 xl:px-[200px]">
+        <article className="mt-8 flex flex-col items-center p-4 sm:p-5 xl:px-[200px]">
           <div className="w-full max-w-4xl space-y-6">
             {/* Account Information */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <User className="h-5 w-5" /> Account Information
@@ -365,7 +404,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Wallet Information (Universal and per-chain) */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <div className="w-5 h-5 bg-purple-500 rounded-full" /> Wallet Information
@@ -376,8 +415,8 @@ const SettingsPage = () => {
               {/* Universal wallet */}
               <div className="flex flex-col mb-4">
                 <label className="text-sm text-[#A4A4A4]">Universal Wallet Address</label>
-                <div className="flex justify-between items-center border border-[#0795B0] rounded-lg p-3 bg-[#0A0E0E]">
-                  <span className="flex-1 mr-2 text-sm">{universalWalletAddress ? formatWalletAddress(universalWalletAddress) : 'Not available'}</span>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between sm:items-center border border-[#0795B0] rounded-lg p-3 bg-[#0A0E0E]">
+                  <span className="flex-1 sm:mr-2 text-sm break-all">{universalWalletAddress ? formatWalletAddress(universalWalletAddress) : 'Not available'}</span>
                   {universalWalletAddress && (
                     <Button
                       variant="outline"
@@ -407,7 +446,7 @@ const SettingsPage = () => {
                 <div>
                   <label className="text-sm text-[#A4A4A4]">Arbitrum Wallet</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm">
+                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm break-all">
                       <span>{user?.arbitrumWallet || user?.walletAddress || "Not set"}</span>
                     </div>
                     <Button
@@ -424,7 +463,7 @@ const SettingsPage = () => {
                 <div>
                   <label className="text-sm text-[#A4A4A4]">Celo Wallet</label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm">
+                    <div className="flex-1 bg-black/40 rounded-lg p-3 font-mono text-sm break-all">
                       <span>{user?.celoWallet || user?.walletAddress || "Not set"}</span>
                     </div>
                     <Button
@@ -457,7 +496,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Authentication Methods */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
                   <SettingsIcon className="h-5 w-5" /> Authentication Methods
@@ -466,7 +505,7 @@ const SettingsPage = () => {
               </div>
 
               {/* Phone Number */}
-              <div className="flex items-center justify-between p-4 bg-black/40 rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-black/40 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Smartphone className="h-5 w-5 text-blue-400" />
                   <div>
@@ -481,7 +520,7 @@ const SettingsPage = () => {
                     disabled={loading || addPhonePasswordMutation.isPending}
                     variant="outline"
                     size="sm"
-                    className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50"
+                    className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50 w-full sm:w-auto"
                   >
                     {user?.phoneNumber ? <Unlink className="h-4 w-4" /> : <Link className="h-4 w-4" />}
                     {user?.phoneNumber ? "Unlink" : "Add Phone"}
@@ -491,7 +530,7 @@ const SettingsPage = () => {
 
               {/* Google Account */}
               <div className="p-4 bg-black/40 rounded-lg mt-3">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-red-400" />
                     <div>
@@ -512,7 +551,7 @@ const SettingsPage = () => {
                         disabled={loading || linkGoogleMutation.isPending}
                         variant="outline"
                         size="sm"
-                        className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50"
+                        className="border-[#0795B0] text-white bg-transparent hover:bg-[#0795B0]/20 hover:text-white disabled:opacity-50 w-full sm:w-auto"
                       >
                         {getAuthMethodStatus('google').linked ? <Unlink className="h-4 w-4" /> : <Link className="h-4 w-4" />}
                         {getAuthMethodStatus('google').linked ? "Unlink" : "Link Google"}
@@ -530,7 +569,7 @@ const SettingsPage = () => {
                       onClick={() => setShowGoogleSignIn(false)}
                       variant="outline"
                       size="sm"
-                      className="mt-3 border-gray-500 text-gray-300 bg-transparent hover:bg-gray-500/20 hover:text-white"
+                      className="mt-3 border-gray-500 text-gray-300 bg-transparent hover:bg-gray-500/20 hover:text-white w-full sm:w-auto"
                     >
                       Cancel
                     </Button>
@@ -540,7 +579,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Security Settings */}
-            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 text-white">
+            <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-4 sm:p-6 text-white">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold">Security</h2>
                 <p className="text-gray-400 text-sm">Manage your security preferences</p>
@@ -576,6 +615,9 @@ const SettingsPage = () => {
                 Create Business Account
               </Button>
             </div>
+
+            {/* Business Settings */}
+            <BusinessSettings />
           </div>
         </article>
 

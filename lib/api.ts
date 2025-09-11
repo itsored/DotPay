@@ -16,12 +16,42 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('nexuspay_token');
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const rawToken =
+      localStorage.getItem('nexuspay_token') ||
+      localStorage.getItem('user') ||
+      localStorage.getItem('nexuspay_user');
+
+    if (rawToken) {
+      try {
+        let tokenCandidate = rawToken;
+        if (tokenCandidate.startsWith('{')) {
+          const parsed = JSON.parse(tokenCandidate);
+          tokenCandidate = parsed?.data?.token || parsed?.token || '';
+        }
+
+        // Strip surrounding quotes if present
+        tokenCandidate = tokenCandidate.replace(/^"|"$/g, '');
+        // Remove any existing Bearer prefix to avoid duplication
+        tokenCandidate = tokenCandidate.replace(/^Bearer\s+/i, '');
+
+        if (tokenCandidate) {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${tokenCandidate}`;
+          if (typeof config.url === 'string' && config.url.includes('/mpesa/pay-with-crypto')) {
+            console.log('[api] Authorization header set for pay-with-crypto request');
+          }
+        }
+      } catch (error) {
+        config.headers = config.headers || {};
+        // As a last resort, attach raw token without duplicates/quotes
+        const sanitized = rawToken.replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
+        config.headers.Authorization = `Bearer ${sanitized}`;
+        if (typeof config.url === 'string' && config.url.includes('/mpesa/pay-with-crypto')) {
+          console.log('[api] Fallback Authorization header set for pay-with-crypto request');
+        }
+      }
     }
-    
+
     return config;
   },
   (error) => {
@@ -83,3 +113,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+export { apiClient as api };

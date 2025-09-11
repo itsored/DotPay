@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authAPI, tokenUtils, userUtils, User } from "../lib/auth";
 import toast from "react-hot-toast";
+import { preloadBalanceAfterLogin } from '@/lib/balance-preloader';
 
 // Types
 export interface AuthContextType {
@@ -94,6 +95,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       tokenUtils.setToken(token);
       userUtils.setUser(userData);
       setUser(userData);
+      
+      // Preload balance data in background for faster loading (temporarily disabled)
+      // preloadBalanceAfterLogin().catch(error => {
+      //   console.error('Failed to preload balance after login:', error);
+      // });
       
       toast.success((response as any).message || 'Authentication successful');
       return userData;
