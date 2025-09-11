@@ -45,6 +45,7 @@ export interface BusinessV2Profile {
 
 // Business account interface matching the API response
 export interface BusinessAccount {
+  _id?: string; // MongoDB ObjectId
   businessId: string;
   merchantId: string;
   businessName: string;
@@ -53,6 +54,7 @@ export interface BusinessAccount {
   email?: string; // Optional as it might not be in all responses
   walletAddress: string;
   creditLimit: number;
+  availableCredit?: number; // Available credit for loans and overdrafts
   currentBalance?: number; // Optional as it might not be in all responses
   overdraftEnabled: boolean;
   status?: 'active' | 'pending' | 'suspended'; // Optional, default to 'active'
