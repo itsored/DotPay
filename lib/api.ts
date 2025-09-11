@@ -37,8 +37,9 @@ apiClient.interceptors.request.use(
         if (tokenCandidate) {
           config.headers = config.headers || {};
           config.headers.Authorization = `Bearer ${tokenCandidate}`;
-          if (typeof config.url === 'string' && config.url.includes('/mpesa/pay-with-crypto')) {
-            console.log('[api] Authorization header set for pay-with-crypto request');
+          if (typeof config.url === 'string' && (config.url.includes('/mpesa/pay-with-crypto') || config.url.includes('/mpesa/crypto-to-mpesa'))) {
+            console.log('[api] Authorization header set for mpesa request:', config.url);
+            console.log('[api] Token being used:', tokenCandidate.substring(0, 20) + '...');
           }
         }
       } catch (error) {
@@ -46,8 +47,8 @@ apiClient.interceptors.request.use(
         // As a last resort, attach raw token without duplicates/quotes
         const sanitized = rawToken.replace(/^"|"$/g, '').replace(/^Bearer\s+/i, '');
         config.headers.Authorization = `Bearer ${sanitized}`;
-        if (typeof config.url === 'string' && config.url.includes('/mpesa/pay-with-crypto')) {
-          console.log('[api] Fallback Authorization header set for pay-with-crypto request');
+        if (typeof config.url === 'string' && (config.url.includes('/mpesa/pay-with-crypto') || config.url.includes('/mpesa/crypto-to-mpesa'))) {
+          console.log('[api] Fallback Authorization header set for mpesa request:', config.url);
         }
       }
     }
