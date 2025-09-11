@@ -444,6 +444,12 @@ const Home = () => {
                     Home
                   </Link>
                   <Link
+                    href="/business"
+                    className="my-2 mx-2 min-w-[100px] text-black hover:text-aqua hover:cursor-pointer "
+                  >
+                    Business
+                  </Link>
+                  <Link
                     href="/reclaim"
                     className="my-2 mx-2 min-w-[100px] text-black hover:text-aqua hover:cursor-pointer "
                   >
