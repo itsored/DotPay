@@ -2,11 +2,11 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { getApiBaseUrl } from './config';
 
 // API Configuration
-const API_BASE_URL = getApiBaseUrl();
+// Note: Do not cache base URL at module scope; it can differ between SSR and client
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -71,6 +71,8 @@ const processToken = (rawToken: string): string | null => {
 // Request interceptor to add auth token
 apiClient.interceptors.request.use(
   (config) => {
+    // Always set baseURL at request time to reflect current environment (SSR vs client)
+    config.baseURL = getApiBaseUrl();
     // Get token from storage
     const rawToken = getAuthToken();
 
@@ -192,9 +194,25 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle network errors
+    // Handle network errors with automatic fallback to production API when on localhost
     if (!error.response) {
       console.error('[api] Network error:', error.message);
+      try {
+        const currentBase = originalRequest?.baseURL || apiClient.defaults.baseURL;
+        const isLocalhost = typeof currentBase === 'string' && currentBase.includes('localhost:8000');
+        const notRetried = !originalRequest?._fallbackToProd;
+        if (isLocalhost && notRetried) {
+          originalRequest._fallbackToProd = true;
+          const prodBase = 'https://api.nexuspaydefi.xyz/api';
+          console.warn('[api] Falling back to production API for this request:', originalRequest.url);
+          return axios({
+            ...originalRequest,
+            baseURL: prodBase,
+          });
+        }
+      } catch (e) {
+        // proceed to reject
+      }
     }
 
     // Handle 500 errors with better logging

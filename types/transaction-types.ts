@@ -88,6 +88,8 @@ export interface Transaction {
   id: string;
   type: 'fiat_to_crypto' | 'crypto_to_fiat' | 'crypto_to_paybill' | 'crypto_to_till' | 'token_transfer';
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'error' | 'reserved';
+  transactionCategory?: 'onchain' | 'onramp' | 'offramp' | 'cardpayment';
+  transactionSubType?: 'sent' | 'received' | 'swap';
   amount: number;
   token: TransactionToken;
   values: TransactionValues;

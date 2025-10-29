@@ -80,6 +80,31 @@ export interface SendTokenErrorResponse {
   };
 }
 
+// Specialized error shape for insufficient token balance responses
+export interface SendTokenInsufficientBalanceError {
+  response?: {
+    status?: number;
+    data?: {
+      success?: boolean;
+      message?: string;
+      error?: {
+        code?: string;
+        message?: string;
+        available?: number;
+        token?: string;
+        chain?: string;
+        timestamp?: string;
+      };
+    };
+  };
+}
+
+export const isInsufficientTokenBalanceError = (err: any): err is SendTokenInsufficientBalanceError => {
+  const code = err?.response?.data?.error?.code;
+  const status = err?.response?.status;
+  return status === 400 && code === 'INSUFFICIENT_TOKEN_BALANCE';
+};
+
 export interface PayMerchantResponse {
   success: boolean;
   message: string;
