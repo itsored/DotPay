@@ -8,7 +8,8 @@ import {
   PayMerchantResponse,
   ReceiveInfoResponse,
   BalanceResponse,
-  validateRecipientIdentifier
+  validateRecipientIdentifier,
+  isInsufficientTokenBalanceError
 } from '../lib/crypto';
 
 export const useCrypto = () => {
@@ -41,13 +42,33 @@ export const useCrypto = () => {
       throw new Error('Invalid recipient identifier. Please use a valid email, phone number, or wallet address.');
     }
 
-    return sendTokenApi.execute(
-      () => cryptoAPI.sendToken(data),
-      {
-        showSuccessToast: false,
-        showErrorToast: false,
+    try {
+      return await sendTokenApi.execute(
+        () => cryptoAPI.sendToken(data),
+        {
+          showSuccessToast: false,
+          showErrorToast: false,
+        }
+      );
+    } catch (err: any) {
+      if (isInsufficientTokenBalanceError(err)) {
+        // Attach a friendly message and structured details for UI consumers
+        const available = err?.response?.data?.error?.available;
+        const token = err?.response?.data?.error?.token;
+        const chain = err?.response?.data?.error?.chain;
+        const friendlyMessage = err?.response?.data?.message || `Insufficient ${token} balance on ${chain}.`;
+
+        const enriched = Object.assign(new Error(friendlyMessage), {
+          code: 'INSUFFICIENT_TOKEN_BALANCE',
+          available,
+          token,
+          chain,
+          original: err,
+        });
+        throw enriched;
       }
-    );
+      throw err;
+    }
   }, [sendTokenApi]);
 
   // Pay merchant with crypto

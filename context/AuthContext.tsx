@@ -84,9 +84,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const userData: User = {
         email: (responseData as any).email || userFromResponse?.email || '',
         phoneNumber: (responseData as any).phoneNumber || userFromResponse?.phoneNumber || '',
-        arbitrumWallet: (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || (responseData as any).walletAddress || '',
-        celoWallet: (responseData as any).celoWallet || userFromResponse?.celoWallet || (responseData as any).walletAddress || '',
-        walletAddress: (responseData as any).walletAddress || (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || '', // fallback for compatibility
+        arbitrumWallet: (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || (responseData as any).walletAddress || (responseData as any).wallets?.evm || '',
+        celoWallet: (responseData as any).celoWallet || userFromResponse?.celoWallet || (responseData as any).walletAddress || (responseData as any).wallets?.evm || '',
+        walletAddress: (responseData as any).walletAddress || (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || (responseData as any).wallets?.evm || '', // fallback for compatibility
+        stellarAccountId: (responseData as any).stellarAccountId || (responseData as any).wallets?.stellar || '',
         token,
       };
       

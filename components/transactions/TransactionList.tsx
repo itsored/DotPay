@@ -35,23 +35,57 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       blockchain,
       timing,
       dashboard,
+      transactionCategory,
+      transactionSubType,
     } = transaction;
+
+    // Get category label
+    const getCategoryLabel = (category?: string) => {
+      switch (category) {
+        case 'onchain':
+          return 'On-chain TX';
+        case 'onramp':
+          return 'Onramp';
+        case 'offramp':
+          return 'Offramp';
+        case 'cardpayment':
+          return 'Card Payment';
+        default:
+          return category || '';
+      }
+    };
 
     return (
       <div className="flex items-center justify-between p-3 bg-[#1A1E1E] rounded-lg border border-[#0795B0] hover:border-[#0AA5C0] transition-colors duration-200">
-        <div className="flex items-center space-x-3">
-          <div className="text-lg">{transactionUtils.getTypeIcon(type)}</div>
-          <div>
-            <p className="text-white font-medium text-sm">
-              {transactionUtils.formatAmount(transaction)}
-            </p>
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <div className="text-lg shrink-0">{transactionUtils.getTypeIcon(type)}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="text-white font-medium text-sm">
+                {transactionUtils.formatAmount(transaction)}
+              </p>
+              {(transactionCategory || transactionSubType) && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {transactionCategory && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                      {getCategoryLabel(transactionCategory)}
+                    </span>
+                  )}
+                  {transactionSubType && (
+                    <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400 capitalize">
+                      {transactionSubType}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-gray-400 text-xs">
               {values.usd.formatted} • {transactionUtils.formatTimeAgo(timing.ageMinutes)}
             </p>
           </div>
         </div>
         
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <div className={`text-xs font-medium ${transactionUtils.getStatusColor(status)}`}>
             {status}
           </div>

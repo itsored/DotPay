@@ -112,7 +112,23 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
 
   // Lightweight transaction item component
   const TransactionItem: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
-    const { type, status, token, values, blockchain, timing, statusValidation } = transaction;
+    const { type, status, token, values, blockchain, timing, statusValidation, transactionCategory, transactionSubType } = transaction;
+    
+    // Get category label
+    const getCategoryLabel = (category?: string) => {
+      switch (category) {
+        case 'onchain':
+          return 'On-chain TX';
+        case 'onramp':
+          return 'Onramp';
+        case 'offramp':
+          return 'Offramp';
+        case 'cardpayment':
+          return 'Card Payment';
+        default:
+          return category || '';
+      }
+    };
     
     // Enhanced status detection with automatic validation support
     const getStatusColor = (status: string, transaction: Transaction) => {
@@ -217,17 +233,33 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
       <div className="flex items-center justify-between p-3 bg-[#1A1E1E] rounded-lg border border-[#0795B0] hover:border-[#0AA5C0] transition-colors duration-200">
         <div className="flex items-center space-x-3">
           <div className="text-lg">{getTypeIcon(type)}</div>
-          <div>
-            <p className="text-white font-medium text-sm">
-              {token.amount} {token.symbol}
-            </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="text-white font-medium text-sm">
+                {token.amount} {token.symbol}
+              </p>
+              {(transactionCategory || transactionSubType) && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {transactionCategory && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                      {getCategoryLabel(transactionCategory)}
+                    </span>
+                  )}
+                  {transactionSubType && (
+                    <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400 capitalize">
+                      {transactionSubType}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-gray-400 text-xs">
               {values.usd.formatted} • {formatTime(timing.ageMinutes)}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0">
           <div className="text-right">
             <div className={`text-xs font-medium ${getStatusColor(status, transaction)}`}>
               {getStatusText(status, transaction)}

@@ -78,10 +78,11 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ className = 
 
     setIsLoading(true);
     try {
-      const response = await businessPinAPI.requestOtp({ 
-        merchantId: merchantId || undefined, 
-        phoneNumber: phoneNumber || undefined 
-      });
+      const requestData: any = {};
+      if (merchantId) requestData.merchantId = merchantId;
+      if (phoneNumber) requestData.phoneNumber = phoneNumber;
+
+      const response = await businessPinAPI.requestOtp(requestData);
       if (response.success) {
         toast({
           title: "OTP Sent",
@@ -333,7 +334,7 @@ export const BusinessSettings: React.FC<BusinessSettingsProps> = ({ className = 
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleSwitchToBusiness(business._id)}
+                        onClick={() => handleSwitchToBusiness(business.businessId)}
                       >
                         Switch
                       </Button>

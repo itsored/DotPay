@@ -12,16 +12,19 @@ export interface DepositData {
 
 export interface BuyCryptoData {
   amount: number; // Amount in KES/USD (not crypto amount)
-  phone: string;
+  phoneNumber?: string; // Made optional for compatibility with different API signatures
+  phone?: string; // Made optional for compatibility with different API signatures
   chain: string;
-  tokenType: string;
+  tokenType?: string; // Made optional for compatibility
+  tokenSymbol?: string; // Alternative field name used by some endpoints
   currency?: 'KES' | 'USD'; // Optional currency field for backend processing
 }
 
 export interface WithdrawData {
   amount: string;
   phoneNumber: string;
-  token: string;
+  token?: string; // Made optional for compatibility
+  tokenSymbol?: string; // Alternative field name
   chain: string;
 }
 
@@ -109,8 +112,37 @@ export const mpesaAPI = {
 
   // Crypto to M-Pesa (Send crypto, recipient gets M-Pesa)
   cryptoToMpesa: async (data: CryptoToMpesaData): Promise<CryptoToMpesaResponse> => {
-    const response = await apiClient.post('/mpesa/crypto-to-mpesa', data);
-    return response.data;
+    try {
+      console.log('[mpesa] Initiating crypto-to-mpesa transfer:', {
+        amount: data.amount,
+        phone: data.phone?.substring(0, 6) + '****',
+        tokenType: data.tokenType || 'USDC'
+      });
+
+      const response = await apiClient.post('/mpesa/crypto-to-mpesa', data);
+
+      console.log('[mpesa] ✅ Crypto-to-mpesa transfer successful');
+      return response.data;
+    } catch (error: any) {
+      console.error('[mpesa] ❌ Crypto-to-mpesa transfer failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      // If it's an auth error, provide more specific guidance
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error('[mpesa] Authentication failed - user may need to re-login');
+      }
+
+      // If it's a 500 error, it might be a backend issue
+      if (error.response?.status === 500) {
+        console.error('[mpesa] Backend server error - please try again later');
+      }
+
+      throw error;
+    }
   },
 
   // Crypto Bill Payments

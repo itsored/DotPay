@@ -69,10 +69,10 @@ export interface BusinessPinForgotRequestResponse {
   otpExpiry: string;
 }
 
-export interface BusinessResponse {
+export interface BusinessResponse<T = any> {
   success: boolean;
   message: string;
-  data: any;
+  data: T;
   error: any;
   timestamp: string;
 }

@@ -24,7 +24,7 @@ export const BusinessLoanApplication: React.FC<BusinessLoanApplicationProps> = (
   onBack, 
   onSuccess 
 }) => {
-  const { currentBusiness, creditScore } = useBusiness();
+  const { currentBusiness } = useBusiness();
   const { toast } = useToast();
   const {
     loanApplication,
@@ -78,7 +78,7 @@ export const BusinessLoanApplication: React.FC<BusinessLoanApplicationProps> = (
     }
 
     const loanAmount = parseFloat(formData.loanAmount);
-    const availableCredit = creditScore?.availableCredit || 0;
+    const availableCredit = currentBusiness?.availableCredit || 0;
 
     if (loanAmount > availableCredit) {
       toast({
@@ -254,18 +254,18 @@ export const BusinessLoanApplication: React.FC<BusinessLoanApplicationProps> = (
       </div>
 
       {/* Credit Score Summary */}
-      {creditScore && (
+      {currentBusiness && (
         <div className="bg-gradient-to-r from-[#0795B0] to-[#0684A0] rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Available Credit</p>
               <h3 className="text-2xl font-bold text-white">
-                ${creditScore.availableCredit.toLocaleString()}
+                ${currentBusiness.availableCredit?.toLocaleString() || '0'}
               </h3>
             </div>
             <div className="text-right">
               <p className="text-white/80 text-sm">Credit Score</p>
-              <h3 className="text-2xl font-bold text-white">{creditScore.creditScore}</h3>
+              <h3 className="text-2xl font-bold text-white">N/A</h3>
             </div>
           </div>
         </div>
@@ -286,12 +286,12 @@ export const BusinessLoanApplication: React.FC<BusinessLoanApplicationProps> = (
                 placeholder="0.00"
                 step="0.01"
                 min="0"
-                max={creditScore?.availableCredit || 0}
+                max={currentBusiness?.availableCredit || 0}
                 className="w-full px-3 py-3 bg-[#1A1E1E] border border-[#0795B0] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0795B0] focus:border-transparent"
                 required
               />
               <p className="text-xs text-gray-400 mt-1">
-                Maximum: ${creditScore?.availableCredit?.toLocaleString() || '0'}
+                Maximum: ${currentBusiness?.availableCredit?.toLocaleString() || '0'}
               </p>
             </div>
 

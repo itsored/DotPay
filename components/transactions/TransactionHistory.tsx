@@ -100,7 +100,25 @@ export const TransactionHistory: React.FC = () => {
       user,
       mpesa,
       conversion,
+      transactionCategory,
+      transactionSubType,
     } = transaction;
+
+    // Get category label
+    const getCategoryLabel = (category?: string) => {
+      switch (category) {
+        case 'onchain':
+          return 'On-chain TX';
+        case 'onramp':
+          return 'Onramp';
+        case 'offramp':
+          return 'Offramp';
+        case 'cardpayment':
+          return 'Card Payment';
+        default:
+          return category || '';
+      }
+    };
 
     const getStatusDisplay = (status: string) => {
       const statusMap: Record<string, { text: string; color: string; bg: string }> = {
@@ -124,18 +142,34 @@ export const TransactionHistory: React.FC = () => {
            }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-3">
-            <div className="text-2xl">{transactionUtils.getTypeIcon(type)}</div>
-            <div>
-              <h3 className="text-white font-semibold text-sm">
-                {dashboard?.summary || `${type.replace('_', ' ')} Transaction`}
-              </h3>
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
+            <div className="text-2xl shrink-0">{transactionUtils.getTypeIcon(type)}</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h3 className="text-white font-semibold text-sm">
+                  {dashboard?.summary || `${type.replace('_', ' ')} Transaction`}
+                </h3>
+                {(transactionCategory || transactionSubType) && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {transactionCategory && (
+                      <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                        {getCategoryLabel(transactionCategory)}
+                      </span>
+                    )}
+                    {transactionSubType && (
+                      <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400 capitalize">
+                        {transactionSubType}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               <p className="text-gray-400 text-xs">
                 {transactionUtils.formatTimeAgo(timing.ageMinutes)} • ID: {id}
               </p>
             </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusDisplay.bg} ${statusDisplay.color} border border-current`}>
+          <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusDisplay.bg} ${statusDisplay.color} border border-current shrink-0`}>
             {statusDisplay.text}
           </div>
         </div>

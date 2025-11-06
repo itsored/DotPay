@@ -37,7 +37,23 @@ export const BusinessTransactions: React.FC<BusinessTransactionsProps> = ({
 
   // Lightweight transaction item component
   const TransactionItem: React.FC<{ transaction: any }> = ({ transaction }) => {
-    const { type, status, amount, tokenType, chain, createdAt, completedAt } = transaction;
+    const { type, status, amount, tokenType, chain, createdAt, completedAt, transactionCategory, transactionSubType } = transaction;
+    
+    // Get category label
+    const getCategoryLabel = (category?: string) => {
+      switch (category) {
+        case 'onchain':
+          return 'On-chain TX';
+        case 'onramp':
+          return 'Onramp';
+        case 'offramp':
+          return 'Offramp';
+        case 'cardpayment':
+          return 'Card Payment';
+        default:
+          return category || '';
+      }
+    };
     
     // Status color mapping
     const getStatusColor = (status: string) => {
@@ -90,19 +106,35 @@ export const BusinessTransactions: React.FC<BusinessTransactionsProps> = ({
 
     return (
       <div className="flex items-center justify-between p-3 bg-[#1A1E1E] rounded-lg border border-[#0795B0] hover:border-[#0AA5C0] transition-colors duration-200">
-        <div className="flex items-center space-x-3">
-          <div className="text-lg">{getTypeIcon(type)}</div>
-          <div>
-            <p className="text-white font-medium text-sm">
-              {amount} {tokenType}
-            </p>
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <div className="text-lg shrink-0">{getTypeIcon(type)}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="text-white font-medium text-sm">
+                {amount} {tokenType}
+              </p>
+              {(transactionCategory || transactionSubType) && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {transactionCategory && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                      {getCategoryLabel(transactionCategory)}
+                    </span>
+                  )}
+                  {transactionSubType && (
+                    <span className="inline-flex items-center rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400 capitalize">
+                      {transactionSubType}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-gray-400 text-xs">
               {formatTime(createdAt)}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0">
           <div className="text-right">
             <div className={`text-xs font-medium ${getStatusColor(status)}`}>
               {getStatusText(status)}

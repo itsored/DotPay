@@ -1,11 +1,10 @@
 import axios, { AxiosInstance } from "axios";
 import { getApiBaseUrl } from "../lib/config";
 
-const baseURL = getApiBaseUrl();
-
 const useAxios = () => {
+  // Evaluate baseURL at runtime (client) to avoid SSR picking localhost in prod
   const $http: AxiosInstance = axios.create({
-    baseURL,
+    baseURL: getApiBaseUrl(),
     headers: {
       "Content-Type": "application/json",
     },
@@ -14,6 +13,8 @@ const useAxios = () => {
   // Add request interceptor to include auth token
   $http.interceptors.request.use(
     (config) => {
+      // Always refresh baseURL per request to respect current origin
+      config.baseURL = getApiBaseUrl();
       const token = localStorage.getItem('nexuspay_token') || localStorage.getItem('user');
       if (token) {
         try {
@@ -36,13 +37,28 @@ const useAxios = () => {
   // Add response interceptor for error handling
   $http.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
       if (error.response?.status === 401) {
         // Token expired or invalid
         localStorage.removeItem('nexuspay_token');
         localStorage.removeItem('nexuspay_user');
         localStorage.removeItem('user');
         // Don't redirect here to avoid breaking the flow
+      }
+      // Network fallback to production when baseURL is localhost
+      if (!error.response) {
+        try {
+          const originalRequest = error.config;
+          const isLocalhost = (originalRequest?.baseURL || '').includes('localhost:8000');
+          if (isLocalhost && !originalRequest._fallbackToProd) {
+            originalRequest._fallbackToProd = true;
+            const prodBase = 'https://api.nexuspaydefi.xyz/api';
+            return axios({
+              ...originalRequest,
+              baseURL: prodBase,
+            });
+          }
+        } catch {}
       }
       return Promise.reject(error);
     }

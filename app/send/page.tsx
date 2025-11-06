@@ -766,6 +766,13 @@ const Send = () => {
   const [openConfirmingTx, setOpenConfirmingTx] = useState(false); // Opens the Transaction Loading Dialog
   const [finAmount, setFinAmount] = useState(0);
   const [openAccErr, setOpenAccErr] = useState(false); // Opens the Failed Acc Creation Loading Dialog
+  const [insufficientInfo, setInsufficientInfo] = useState<{ available: number; token: string; chain: string } | null>(null);
+  const [successTx, setSuccessTx] = useState<{ 
+    hash?: string; 
+    explorerUrl?: string; 
+    transactionCategory?: string;
+    transactionSubType?: string;
+  } | null>(null);
   const api = useAxios();
 
   const { data, isLoading, error } = useGetConversionRate();
@@ -779,6 +786,21 @@ const Send = () => {
 
       setWallet(walletAddress);
       console.log("Wallet set to:", walletAddress);
+
+      // Fallback: fetch from /token/receive if not available from user profile
+      if (!walletAddress) {
+        api.get('token/receive')
+          .then((res) => {
+            const addr = res?.data?.data?.walletAddress;
+            if (addr) {
+              setWallet(addr);
+              console.log('Wallet fetched from /token/receive:', addr);
+            }
+          })
+          .catch((e) => {
+            console.warn('Failed to fetch wallet from /token/receive', e);
+          });
+      }
     }
     
     if (!isLoading && data) {
@@ -887,6 +909,15 @@ const Send = () => {
       });
     },
     onSuccess: (data, variables, context) => {
+      try {
+        const resp = (data as any)?.data || data;
+        const payload = resp?.data || resp;
+        const hash = payload?.transaction?.hash || payload?.transactionHash;
+        const explorerUrl = payload?.transaction?.explorerUrl || payload?.explorerUrl;
+        const transactionCategory = payload?.transactionCategory || payload?.transaction?.category;
+        const transactionSubType = payload?.transactionSubType || payload?.transaction?.subType;
+        setSuccessTx({ hash, explorerUrl, transactionCategory, transactionSubType });
+      } catch {}
       setOpenConfirmingTx(true);
       setTimeout(() => {
         router.replace("/home");
@@ -894,6 +925,18 @@ const Send = () => {
     },
     onError: (error, variables, context) => {
       console.error("Error:", error);
+      const code = (error as any)?.response?.data?.error?.code;
+      if (code === 'INSUFFICIENT_TOKEN_BALANCE') {
+        const available = (error as any)?.response?.data?.error?.available;
+        const token = (error as any)?.response?.data?.error?.token || (currency === 'usdt' ? 'USDT' : 'USDC');
+        const errChain = (error as any)?.response?.data?.error?.chain || chain;
+        setInsufficientInfo({ available: Number(available), token, chain: errChain });
+        toast({
+          title: 'Insufficient balance',
+          description: `You have ${available} ${token} on ${errChain}. You can auto-fill the maximum available amount.`,
+        });
+        return;
+      }
       setOpenAccErr(true);
     },
     onSettled: (data, error, variables, context) => {},
@@ -960,6 +1003,29 @@ const Send = () => {
           </span>
         </span>
       </div>
+
+      {insufficientInfo && (
+        <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm">Insufficient balance. Available: <span className="font-medium">{insufficientInfo.available} {insufficientInfo.token}</span> on {insufficientInfo.chain}.</p>
+              <p className="text-xs opacity-80">Tap to auto-fill the maximum available amount.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const maxInCurrentCurrency = currency === 'ksh' 
+                  ? (Number(insufficientInfo.available) * conversionRate).toFixed(2)
+                  : String(insufficientInfo.available);
+                setValue('amount', maxInCurrentCurrency, { shouldValidate: true, shouldDirty: true });
+              }}
+              className="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700"
+            >
+              Use max
+            </button>
+          </div>
+        </div>
+      )}
 
       <form id="sendForm" onSubmit={handleSubmit(submitSend)} className="mt-10">
         <Select value={currency} onValueChange={setCurrency}>
@@ -1045,11 +1111,15 @@ const Send = () => {
           </DialogContent>
         </Dialog>
         <TransactionSuccessDialog
-          message="Confirm Payment"
+          message="Transfer Successful"
           openSuccess={openConfirmingTx}
           setOpenSuccess={setOpenConfirmingTx}
           amount={amount}
           currency={currency}
+          transactionCategory={successTx?.transactionCategory as any}
+          transactionSubType={successTx?.transactionSubType as any}
+          transactionHash={successTx?.hash}
+          explorerUrl={successTx?.explorerUrl}
         />
         <ErrorDialog
           message="Transaction Failed"

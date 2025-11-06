@@ -444,6 +444,12 @@ const Home = () => {
                     Home
                   </Link>
                   <Link
+                    href="/business"
+                    className="my-2 mx-2 min-w-[100px] text-black hover:text-aqua hover:cursor-pointer "
+                  >
+                    Business
+                  </Link>
+                  <Link
                     href="/reclaim"
                     className="my-2 mx-2 min-w-[100px] text-black hover:text-aqua hover:cursor-pointer "
                   >
@@ -549,6 +555,7 @@ const Home = () => {
                 <SelectItem value="bnb">BNB Chain</SelectItem>
                 <SelectItem value="scroll">Scroll</SelectItem>
                 <SelectItem value="gnosis">Gnosis</SelectItem>
+                <SelectItem value="stellar">🌟 Stellar (NEW)</SelectItem>
               </SelectContent>
             </Select>
           </div>

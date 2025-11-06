@@ -8,16 +8,17 @@ import { transactionAPI } from "../lib/transactions";
 import { Transaction } from "../types/transaction-types";
 import { useAuth } from "./AuthContext";
 import toast from "react-hot-toast";
+import { stellarWalletAPI, StellarBalance } from "../lib/stellar";
 
 // Supported chains and tokens
 export const SUPPORTED_CHAINS = [
   'celo', 'polygon', 'arbitrum', 'base', 'optimism', 'ethereum', 
   'bnb', 'avalanche', 'fantom', 'gnosis', 'scroll', 'moonbeam', 
-  'fuse', 'aurora', 'lisk', 'somnia'
+  'fuse', 'aurora', 'lisk', 'somnia', 'stellar'
 ];
 
 export const SUPPORTED_TOKENS = [
-  'USDC', 'USDT', 'BTC', 'ETH', 'WETH', 'WBTC', 'DAI', 'CELO'
+  'USDC', 'USDT', 'BTC', 'ETH', 'WETH', 'WBTC', 'DAI', 'CELO', 'XLM'
 ];
 
 // Context Types
@@ -28,12 +29,22 @@ export interface WalletContextType {
   loading: boolean;
   refreshing: boolean;
   
+  // Stellar Wallet State
+  stellarWallet: {
+    accountId: string;
+    balances: StellarBalance[];
+    isActive: boolean;
+  } | null;
+  hasStellarWallet: boolean;
+  
   // Wallet Setup
   hasWallet: boolean;
   initializeWallet: () => Promise<void>;
+  initializeStellarWallet: () => Promise<void>;
   
   // Core Wallet Operations
   refreshWallet: () => Promise<void>;
+  refreshStellarWallet: () => Promise<void>;
   sendToken: (data: SendTokenData) => Promise<any>;
   payMerchant: (data: PayMerchantData) => Promise<any>;
   getTransferHistory: () => Promise<TransferEvent[]>;
@@ -68,18 +79,65 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
+  // Stellar wallet state
+  const [stellarWallet, setStellarWallet] = useState<{
+    accountId: string;
+    balances: StellarBalance[];
+    isActive: boolean;
+  } | null>(null);
+  
   // Check if user has wallet setup
   const hasWallet = wallet?.walletAddress ? true : false;
+  const hasStellarWallet = stellarWallet?.accountId ? true : false;
+
+  // Refresh Stellar wallet data
+  const refreshStellarWallet = async () => {
+    if (!isAuthenticated || !user) return;
+    
+    try {
+      console.log('🌟 [Stellar] Refreshing Stellar wallet for user:', user.email || user.phoneNumber);
+      const response = await stellarWalletAPI.getWallet();
+      
+      if (response.success) {
+        setStellarWallet({
+          accountId: response.data.accountId,
+          balances: response.data.balances,
+          isActive: response.data.isActive,
+        });
+        console.log('🌟 [Stellar] Wallet loaded successfully:', {
+          accountId: response.data.accountId,
+          balances: response.data.balances.length,
+          isActive: response.data.isActive
+        });
+        toast.success('Stellar wallet loaded! 🌟');
+      }
+    } catch (error: any) {
+      console.error('🌟 [Stellar] Failed to load Stellar wallet:', error);
+      
+      // Don't show error for 404 (wallet doesn't exist yet)
+      if (error.response?.status === 404) {
+        console.log('🌟 [Stellar] Wallet not found (404) - User needs to create one');
+        console.log('🌟 [Stellar] Visit /wallet page to create your Stellar wallet');
+        // Optionally auto-create the wallet
+        // await initializeStellarWallet().catch(() => {});
+      } else if (error.response?.status !== 403 && error.response?.status !== 401) {
+        // Don't show error for auth issues, just log
+        console.error('🌟 [Stellar] Unexpected error:', error.response?.data || error.message);
+      }
+    }
+  };
 
   // Initialize wallet data when authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      console.log('User authenticated, attempting to refresh wallet');
+      console.log('User authenticated, attempting to refresh wallets');
       console.log('User token:', user.token);
       console.log('Token in localStorage:', localStorage.getItem('nexuspay_token'));
       refreshWallet();
+      refreshStellarWallet();
     } else {
       setWallet(null);
+      setStellarWallet(null);
       console.log('User not authenticated or no user data');
     }
   }, [isAuthenticated, user]);
@@ -206,6 +264,42 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
         toast.error('Unable to initialize wallet. Please contact support.');
       } else {
         toast.error(error.message || 'Failed to initialize wallet');
+      }
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initialize Stellar wallet for new users
+  const initializeStellarWallet = async () => {
+    if (!isAuthenticated || !user) {
+      throw new Error('User must be authenticated to initialize Stellar wallet');
+    }
+    
+    try {
+      setLoading(true);
+      console.log('Initializing Stellar wallet for user:', user);
+      
+      const response = await stellarWalletAPI.createWallet();
+      
+      if (response.success) {
+        setStellarWallet({
+          accountId: response.data.accountId,
+          balances: response.data.balances,
+          isActive: response.data.isActive,
+        });
+        toast.success('Stellar wallet created successfully!');
+      } else {
+        throw new Error(response.message || 'Failed to create Stellar wallet');
+      }
+    } catch (error: any) {
+      console.error('Failed to initialize Stellar wallet:', error);
+      
+      if (error.response?.status === 403) {
+        toast.error('Unable to create Stellar wallet. Please contact support.');
+      } else {
+        toast.error(error.message || 'Failed to create Stellar wallet');
       }
       throw error;
     } finally {
@@ -430,9 +524,13 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     balance,
     loading,
     refreshing,
+    stellarWallet,
+    hasStellarWallet,
     hasWallet,
     refreshWallet,
+    refreshStellarWallet,
     initializeWallet,
+    initializeStellarWallet,
     sendToken,
     payMerchant,
     getTransferHistory,
