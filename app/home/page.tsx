@@ -555,6 +555,7 @@ const Home = () => {
                 <SelectItem value="bnb">BNB Chain</SelectItem>
                 <SelectItem value="scroll">Scroll</SelectItem>
                 <SelectItem value="gnosis">Gnosis</SelectItem>
+                <SelectItem value="stellar">🌟 Stellar (NEW)</SelectItem>
               </SelectContent>
             </Select>
           </div>

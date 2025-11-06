@@ -206,6 +206,7 @@ export const SUPPORTED_CHAINS = [
   { name: 'Aurora', id: 'aurora', chainId: 1313161554 },
   { name: 'Lisk', id: 'lisk', chainId: 1890 },
   { name: 'Somnia', id: 'somnia', chainId: 1919 },
+  { name: 'Stellar', id: 'stellar', chainId: 0 }, // Stellar doesn't use EVM chainId
 ];
 
 export const SUPPORTED_TOKENS = [
@@ -217,6 +218,7 @@ export const SUPPORTED_TOKENS = [
   { symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8 },
   { symbol: 'DAI', name: 'Dai', decimals: 18 },
   { symbol: 'CELO', name: 'Celo', decimals: 18 },
+  { symbol: 'XLM', name: 'Stellar Lumens', decimals: 7 },
 ];
 
 // Utility functions
@@ -233,9 +235,13 @@ export const validateRecipientIdentifier = (identifier: string): boolean => {
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
   if (phoneRegex.test(identifier)) return true;
   
-  // Check if it's a wallet address
-  const walletRegex = /^0x[a-fA-F0-9]{40}$/;
-  if (walletRegex.test(identifier)) return true;
+  // Check if it's an EVM wallet address
+  const evmWalletRegex = /^0x[a-fA-F0-9]{40}$/;
+  if (evmWalletRegex.test(identifier)) return true;
+  
+  // Check if it's a Stellar address (starts with G and is 56 characters)
+  const stellarRegex = /^G[A-Z0-9]{55}$/;
+  if (stellarRegex.test(identifier)) return true;
   
   return false;
 };

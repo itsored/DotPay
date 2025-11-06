@@ -312,6 +312,45 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
+        {/* Stellar Blockchain Highlight */}
+        <Card className="mb-8 bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span className="text-2xl">🌟</span>
+              <span>Stellar Blockchain Integration</span>
+              <Badge variant="default" className="ml-2">NEW</Badge>
+            </CardTitle>
+            <CardDescription>
+              Fast, low-cost cross-border payments with Stellar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-4 rounded-lg border border-purple-200">
+                <p className="text-sm text-gray-600 mb-1">Supported Assets</p>
+                <p className="text-2xl font-bold text-purple-600">XLM • USDC</p>
+                <p className="text-xs text-gray-500 mt-2">Native Stellar assets</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-purple-200">
+                <p className="text-sm text-gray-600 mb-1">Transaction Speed</p>
+                <p className="text-2xl font-bold text-blue-600">3-5 sec</p>
+                <p className="text-xs text-gray-500 mt-2">Ultra-fast confirmations</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-purple-200">
+                <p className="text-sm text-gray-600 mb-1">Transaction Fee</p>
+                <p className="text-2xl font-bold text-green-600">~$0.00001</p>
+                <p className="text-xs text-gray-500 mt-2">Minimal network fees</p>
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-white rounded-lg border border-purple-200">
+              <p className="text-sm text-gray-700">
+                <strong>🎉 Now Available:</strong> Users can create Stellar wallets, buy XLM/USDC with M-Pesa, 
+                send/receive payments on Stellar network, and enjoy significantly lower fees compared to EVM chains.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Token Analytics */}
         {platformStats && platformStats.tokens ? (
           <Card className="mb-8">

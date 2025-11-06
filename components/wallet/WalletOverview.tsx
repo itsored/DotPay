@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
+import { useStellar } from "@/hooks/useStellar";
 import { Copy } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -11,8 +12,9 @@ interface WalletOverviewProps {
 }
 
 const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
-  const { isAuthenticated } = useAuth();
-  const { wallet, balance, loading, refreshing, hasWallet, refreshWallet, initializeWallet } = useWallet();
+  const { isAuthenticated, user } = useAuth();
+  const { wallet, balance, loading, refreshing, hasWallet, refreshWallet, initializeWallet, stellarWallet } = useWallet();
+  const { balances: stellarBalances } = useStellar();
   const [selectedChain, setSelectedChain] = useState<string>("all");
   const [initializing, setInitializing] = useState(false);
 
@@ -180,9 +182,9 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
 
           {/* Wallet Info Card */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-4">
-            {/* Wallet Address */}
+            {/* EVM Wallet Address */}
             <div>
-              <h4 className="font-medium mb-2 text-gray-700">Wallet Address</h4>
+              <h4 className="font-medium mb-2 text-gray-700">EVM Wallet Address</h4>
               <div className="flex items-center justify-between bg-white p-3 rounded border">
                 <span className="font-mono text-sm text-gray-800">
                   {wallet ? formatWalletAddress(wallet.walletAddress) : 'N/A'}
@@ -190,10 +192,29 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
                 <Copy 
                   size={16} 
                   className="cursor-pointer text-gray-500 hover:text-blue-500"
-                  onClick={() => wallet && copyToClipboard(wallet.walletAddress, "Wallet address copied!")}
+                  onClick={() => wallet && copyToClipboard(wallet.walletAddress, "EVM wallet address copied!")}
                 />
               </div>
             </div>
+
+            {/* Stellar Wallet Address */}
+            {(user as any)?.stellarAccountId && (
+              <div>
+                <h4 className="font-medium mb-2 text-gray-700 flex items-center gap-2">
+                  🌟 Stellar Wallet Address
+                </h4>
+                <div className="flex items-center justify-between bg-white p-3 rounded border">
+                  <span className="font-mono text-sm text-gray-800">
+                    {formatWalletAddress((user as any).stellarAccountId)}
+                  </span>
+                  <Copy 
+                    size={16} 
+                    className="cursor-pointer text-gray-500 hover:text-blue-500"
+                    onClick={() => copyToClipboard((user as any).stellarAccountId, "Stellar wallet address copied!")}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Phone Number */}
             {wallet?.phoneNumber && (
@@ -227,7 +248,7 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
           </div>
 
           {/* Chain Selection and Balances */}
-          {getAvailableChains().length > 0 ? (
+          {(getAvailableChains().length > 0 || stellarBalances.length > 0) ? (
             <div>
               <h4 className="font-medium mb-3 text-gray-700">Token Balances by Chain</h4>
               <div className="flex flex-wrap gap-2 mb-4">
@@ -254,13 +275,27 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
                     {chain}
                   </button>
                 ))}
+                {/* Stellar Chain */}
+                {stellarBalances.length > 0 && (
+                  <button
+                    onClick={() => setSelectedChain("stellar")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedChain === "stellar"
+                        ? "bg-purple-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    🌟 Stellar
+                  </button>
+                )}
               </div>
 
               {/* Token Balances */}
               <div className="space-y-3">
                 {selectedChain === "all" ? (
-                  // Show all chains
-                  getAvailableChains().map((chain) => (
+                  // Show all chains including Stellar
+                  <>
+                  {getAvailableChains().map((chain) => (
                     <div key={chain} className="border rounded-lg p-4">
                       <div className="flex justify-between items-center mb-3">
                         <h5 className="font-medium capitalize text-gray-800">{chain}</h5>
@@ -287,7 +322,75 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
                         ))}
                       </div>
                     </div>
-                  ))
+                  ))}
+                  {/* Stellar Balances */}
+                  {stellarBalances.length > 0 && (
+                    <div className="border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-blue-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h5 className="font-medium text-gray-800 flex items-center gap-2">
+                          🌟 Stellar
+                        </h5>
+                        <span className="text-sm text-gray-500">
+                          {formatUSD(stellarBalances.reduce((total, bal) => total + bal.usdValue, 0))}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {stellarBalances.map((bal) => (
+                          <div key={bal.asset} className="flex justify-between items-center p-3 bg-white rounded">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-bold text-purple-600">
+                                  {bal.asset === 'XLM' ? '🌟' : '💵'}
+                                </span>
+                              </div>
+                              <span className="font-medium">{bal.asset}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">{parseFloat(bal.balance).toFixed(7)}</p>
+                              <p className="text-sm text-gray-500">{formatUSD(bal.usdValue)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  </>
+                ) : selectedChain === "stellar" ? (
+                  // Show only Stellar
+                  stellarBalances.length > 0 ? (
+                    <div className="border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-blue-50">
+                      <div className="flex justify-between items-center mb-3">
+                        <h5 className="font-medium text-gray-800 flex items-center gap-2">
+                          🌟 Stellar
+                        </h5>
+                        <span className="text-sm text-gray-500">
+                          {formatUSD(stellarBalances.reduce((total, bal) => total + bal.usdValue, 0))}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {stellarBalances.map((bal) => (
+                          <div key={bal.asset} className="flex justify-between items-center p-3 bg-white rounded">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-bold text-purple-600">
+                                  {bal.asset === 'XLM' ? '🌟' : '💵'}
+                                </span>
+                              </div>
+                              <span className="font-medium">{bal.asset}</span>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-medium">{parseFloat(bal.balance).toFixed(7)}</p>
+                              <p className="text-sm text-gray-500">{formatUSD(bal.usdValue)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 mb-2">No Stellar tokens found</p>
+                    </div>
+                  )
                 ) : (
                   // Show selected chain only
                   <div className="border rounded-lg p-4">

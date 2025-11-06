@@ -12,16 +12,19 @@ export interface DepositData {
 
 export interface BuyCryptoData {
   amount: number; // Amount in KES/USD (not crypto amount)
-  phone: string;
+  phoneNumber?: string; // Made optional for compatibility with different API signatures
+  phone?: string; // Made optional for compatibility with different API signatures
   chain: string;
-  tokenType: string;
+  tokenType?: string; // Made optional for compatibility
+  tokenSymbol?: string; // Alternative field name used by some endpoints
   currency?: 'KES' | 'USD'; // Optional currency field for backend processing
 }
 
 export interface WithdrawData {
   amount: string;
   phoneNumber: string;
-  token: string;
+  token?: string; // Made optional for compatibility
+  tokenSymbol?: string; // Alternative field name
   chain: string;
 }
 

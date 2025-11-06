@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useCrypto } from '../../hooks/useCrypto';
 import { Copy, Check } from '@phosphor-icons/react';
+import { useWallet } from '../../context/WalletContext';
 
 export const ReceiveInfo: React.FC = () => {
   const { getReceiveInfo, receiveInfoData, receiveInfoLoading, receiveInfoError } = useCrypto();
+  const { stellarWallet, hasStellarWallet } = useWallet();
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,13 +81,29 @@ export const ReceiveInfo: React.FC = () => {
       <div className="bg-[#0A0E0E] rounded-xl border border-[#0795B0] p-6 shadow-lg">
         <h2 className="text-2xl font-bold mb-6 text-center text-white">Receive Crypto</h2>
         
-        {/* Wallet Address */}
-        <div className="mb-6">
-          <CopyButton
-            text={data.walletAddress}
-            field="wallet"
-            label="Your Wallet Address"
-          />
+        {/* Wallet Addresses */}
+        <div className="mb-6 space-y-4">
+          <h3 className="text-lg font-semibold text-white mb-3">💳 Your Wallet Addresses</h3>
+          
+          {/* EVM Wallet Address */}
+          <div>
+            <CopyButton
+              text={data.walletAddress}
+              field="wallet"
+              label="EVM Wallet Address (Ethereum, Polygon, etc.)"
+            />
+          </div>
+
+          {/* Stellar Wallet Address */}
+          {hasStellarWallet && stellarWallet && (
+            <div>
+              <CopyButton
+                text={stellarWallet.accountId}
+                field="stellar-wallet"
+                label="🌟 Stellar Wallet Address (XLM, USDC on Stellar)"
+              />
+            </div>
+          )}
         </div>
 
         {/* Contact Information */}

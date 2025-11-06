@@ -16,13 +16,18 @@ const Receive: React.FC = () => {
   const { wallet, hasWallet, loading, initializeWallet } = useWallet();
   const { chain } = useChain();
   const [initializing, setInitializing] = useState(false);
+  const [selectedWalletType, setSelectedWalletType] = useState<'evm' | 'stellar'>('evm');
 
   // Get wallet address and user info from the new API response
   const walletAddress = wallet?.walletAddress || wallet?.address || user?.walletAddress || "";
+  const stellarAddress = user?.stellarAccountId || "";
   const phoneNumber = wallet?.phoneNumber || user?.phoneNumber || "";
   const email = wallet?.email || user?.email || "";
   const supportedChains = wallet?.supportedChains || [];
   const note = wallet?.note || "";
+  
+  // Get the current display address based on selection
+  const currentDisplayAddress = selectedWalletType === 'stellar' ? stellarAddress : walletAddress;
 
   const copyToClipboard = async (text: string, message = "Copied to clipboard") => {
     try {
@@ -66,9 +71,35 @@ const Receive: React.FC = () => {
 
         <div className="flex flex-col items-center mt-10">
           <h5 className="text-xl text-white mb-2">Scan to Receive</h5>
-          <p className="text-sm text-gray-400 text-center mb-6">
+          <p className="text-sm text-gray-400 text-center mb-4">
             Share this QR code or wallet address to receive payments
           </p>
+          
+          {/* Wallet Type Selector */}
+          {walletAddress && stellarAddress && (
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setSelectedWalletType('evm')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedWalletType === 'evm'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                EVM Chains
+              </button>
+              <button
+                onClick={() => setSelectedWalletType('stellar')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  selectedWalletType === 'stellar'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                🌟 Stellar
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-center mb-8">
@@ -79,14 +110,17 @@ const Receive: React.FC = () => {
                 {initializing ? 'Setting up wallet...' : 'Loading wallet...'}
               </p>
             </div>
-          ) : walletAddress ? (
+          ) : currentDisplayAddress ? (
             <div className="bg-white p-4 rounded-lg">
               <QRCode 
-                value={walletAddress} 
+                value={currentDisplayAddress} 
                 size={200} 
                 level={"H"} 
                 includeMargin={true} 
               />
+              <p className="text-xs text-center mt-2 text-gray-600">
+                {selectedWalletType === 'stellar' ? 'Stellar Network' : 'EVM Compatible Chains'}
+              </p>
             </div>
           ) : (
             <div className="bg-gray-800 p-8 rounded-lg text-center">
@@ -106,10 +140,10 @@ const Receive: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          {/* Wallet Address */}
+          {/* EVM Wallet Address */}
           <div className="flex flex-col">
             <label className="text-[#909090] p-1 text-sm">
-              Universal Wallet Address
+              EVM Wallet Address
             </label>
             <div className="flex justify-between items-center border border-[#0795B0] rounded-lg p-3 bg-[#0A0E0E] text-white">
               <span className="flex-1 mr-2 text-sm">
@@ -119,12 +153,32 @@ const Receive: React.FC = () => {
                 <Copy 
                   size={20} 
                   color="#ffffff" 
-                  onClick={() => copyToClipboard(walletAddress, "Wallet address copied!")}
+                  onClick={() => copyToClipboard(walletAddress, "EVM wallet address copied!")}
                   className="cursor-pointer hover:text-blue-400"
                 />
               )}
             </div>
           </div>
+
+          {/* Stellar Wallet Address */}
+          {user?.stellarAccountId && (
+            <div className="flex flex-col">
+              <label className="text-[#909090] p-1 text-sm flex items-center gap-2">
+                🌟 Stellar Wallet Address
+              </label>
+              <div className="flex justify-between items-center border border-[#0795B0] rounded-lg p-3 bg-gradient-to-r from-purple-900/30 to-blue-900/30 text-white">
+                <span className="flex-1 mr-2 text-sm font-mono">
+                  {formatWalletAddress(user.stellarAccountId)}
+                </span>
+                <Copy 
+                  size={20} 
+                  color="#ffffff" 
+                  onClick={() => copyToClipboard(user.stellarAccountId!, "Stellar wallet address copied!")}
+                  className="cursor-pointer hover:text-purple-400"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Phone Number */}
           {phoneNumber && (

@@ -192,12 +192,12 @@ export const SendTokenForm: React.FC = () => {
 
   // Get placeholder text showing all options
   const getPlaceholder = () => {
-    return 'email, phone & address';
+    return 'email, phone, EVM/Stellar address';
   };
 
   // Get validation message
   const getValidationMessage = () => {
-    return 'Enter a valid email address, phone number, or wallet address. The system will automatically detect the type.';
+    return 'Enter a valid email address, phone number, EVM wallet address (0x...), or Stellar address (G...). The system will automatically detect the type.';
   };
 
   return (
@@ -216,10 +216,11 @@ export const SendTokenForm: React.FC = () => {
               id="recipientIdentifier"
               value={sendFormData.recipientIdentifier}
               onChange={(e) => updateSendForm('recipientIdentifier', e.target.value)}
-              placeholder="email, phone & address"
+              placeholder={getPlaceholder()}
               className="w-full px-3 py-3 bg-[#1A1E1E] border border-[#0795B0] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0795B0] focus:border-transparent hover:border-[#0AA5C0] transition-colors duration-200"
               required
             />
+            <p className="text-xs text-gray-400 mt-1">{getValidationMessage()}</p>
           </div>
 
           {/* Amount */}
@@ -272,7 +273,7 @@ export const SendTokenForm: React.FC = () => {
               >
                 {SUPPORTED_CHAINS.map((chain) => (
                   <option key={chain.id} value={chain.id}>
-                    {chain.name}
+                    {chain.id === 'stellar' ? '🌟 ' : ''}{chain.name}
                   </option>
                 ))}
               </select>

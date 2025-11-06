@@ -329,10 +329,11 @@ export const BuyCryptoForm: React.FC = () => {
               onChange={handleInputChange}
               className="w-full px-3 py-3 bg-[#1A1E1E] border border-[#0795B0] rounded-md text-white focus:outline-none focus:ring-2 focus:ring-[#0795B0] focus:border-transparent hover:border-[#0AA5C0] transition-colors duration-200"
             >
-              <option value="USDC">USDC</option>
-              <option value="USDT">USDT</option>
-              <option value="ETH">ETH</option>
-              <option value="BTC">BTC</option>
+              <option value="USDC">USDC (USD Coin)</option>
+              <option value="USDT">USDT (Tether)</option>
+              <option value="XLM">XLM (Stellar Lumens)</option>
+              <option value="ETH">ETH (Ethereum)</option>
+              <option value="BTC">BTC (Bitcoin)</option>
             </select>
           </div>
           
@@ -351,6 +352,7 @@ export const BuyCryptoForm: React.FC = () => {
               <option value="celo">Celo</option>
               <option value="polygon">Polygon</option>
               <option value="base">Base</option>
+              <option value="stellar">🌟 Stellar</option>
             </select>
           </div>
           

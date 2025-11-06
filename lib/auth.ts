@@ -91,6 +91,7 @@ export interface User {
     arbitrumWallet?: string;
     celoWallet?: string;
     walletAddress?: string;
+    stellarAccountId?: string; // Stellar wallet address
     token: string;
 }
 
