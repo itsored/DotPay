@@ -107,12 +107,29 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
   const [showDetails, setShowDetails] = useState(false);
 
   // Cache key for localStorage
-  const CACHE_KEY = 'nexuspay_recent_transactions';
+  const CACHE_KEY = 'dotpay_recent_transactions';
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   // Lightweight transaction item component
   const TransactionItem: React.FC<{ transaction: Transaction }> = ({ transaction }) => {
     const { type, status, token, values, blockchain, timing, statusValidation, transactionCategory, transactionSubType } = transaction;
+    
+    // Defensive check for values
+    if (!values || !values.usd) {
+      console.error('⚠️ Transaction missing values:', transaction.id, transaction);
+      // Provide fallback values
+      const fallbackValues = {
+        fiat: { amount: 0, currency: 'KES', formatted: 'KES 0' },
+        usd: { amount: 0, formatted: '$0.00' },
+        kes: { amount: 0, formatted: 'KES 0' }
+      };
+      // Use fallback if values is missing
+      if (!values) {
+        (transaction as any).values = fallbackValues;
+      } else if (!values.usd) {
+        values.usd = fallbackValues.usd;
+      }
+    }
     
     // Get category label
     const getCategoryLabel = (category?: string) => {
@@ -254,7 +271,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
               )}
             </div>
             <p className="text-gray-400 text-xs">
-              {values.usd.formatted} • {formatTime(timing.ageMinutes)}
+              {values?.usd?.formatted || '$0.00'} • {formatTime(timing?.ageMinutes || 0)}
             </p>
           </div>
         </div>
@@ -299,8 +316,19 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
           // Use cache if less than 5 minutes old
           if (now - timestamp < CACHE_DURATION) {
             console.log('📦 Using cached transactions:', data.length);
-            console.log('🔍 Cached transaction statuses:', data.map((t: any) => ({ id: t.id, status: t.status, type: t.type })));
-            setTransactions(data.slice(0, 5)); // Only show first 5
+            // Validate cached data has proper structure
+            const validatedCached = data.map((t: any) => {
+              if (!t.values || !t.values.usd) {
+                const amount = t.amount || t.token?.amount || 0;
+                t.values = {
+                  fiat: { amount: amount * 133.5, currency: 'KES', formatted: `KES ${Math.round(amount * 133.5)}` },
+                  usd: { amount: amount, formatted: `$${amount.toFixed(2)}` },
+                  kes: { amount: amount * 133.5, formatted: `KES ${Math.round(amount * 133.5)}` }
+                };
+              }
+              return t;
+            });
+            setTransactions(validatedCached.slice(0, 5)); // Only show first 5
             setLoading(false);
             return;
           }
@@ -308,7 +336,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
       }
 
       console.log('🔄 Fetching fresh transactions...');
-      console.log('🔍 Auth token check:', localStorage.getItem('nexuspay_token') ? '✅ Present' : '❌ Missing');
+      console.log('🔍 Auth token check:', localStorage.getItem('dotpay_token') ? '✅ Present' : '❌ Missing');
       
       // Fetch fresh data
       const response = await transactionAPI.getHistory({ 
@@ -339,15 +367,44 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
         // Validate and normalize transaction data
         const validatedTransactions = recentTransactions.map(transaction => {
           console.log('🔍 Validating transaction:', transaction.id);
+          console.log('🔍 Transaction structure:', {
+            hasValues: !!transaction.values,
+            hasUsd: !!transaction.values?.usd,
+            hasTiming: !!transaction.timing,
+            hasToken: !!transaction.token
+          });
           
           // Check if we have the expected data structure
           if (!transaction.status) {
             console.warn('⚠️ Missing status for transaction:', transaction.id);
-            // Default to success if no status provided
             transaction.status = 'completed';
           }
           
-          if (!transaction.timing?.ageMinutes && transaction.timing?.createdAt) {
+          // Ensure values object exists with all required fields
+          if (!transaction.values) {
+            console.warn('⚠️ Missing values for transaction:', transaction.id);
+            const amount = transaction.amount || transaction.token?.amount || 0;
+            transaction.values = {
+              fiat: { amount: amount * 133.5, currency: 'KES', formatted: `KES ${Math.round(amount * 133.5)}` },
+              usd: { amount: amount, formatted: `$${amount.toFixed(2)}` },
+              kes: { amount: amount * 133.5, formatted: `KES ${Math.round(amount * 133.5)}` }
+            };
+          } else if (!transaction.values.usd) {
+            console.warn('⚠️ Missing usd in values for transaction:', transaction.id);
+            const amount = transaction.amount || transaction.token?.amount || 0;
+            transaction.values.usd = { amount: amount, formatted: `$${amount.toFixed(2)}` };
+          }
+          
+          // Ensure timing exists
+          if (!transaction.timing) {
+            console.warn('⚠️ Missing timing for transaction:', transaction.id);
+            transaction.timing = {
+              createdAt: new Date().toISOString(),
+              processingTimeSeconds: 0,
+              ageMinutes: 0,
+              formatted: { created: new Date().toLocaleString() }
+            };
+          } else if (!transaction.timing.ageMinutes && transaction.timing.createdAt) {
             // Calculate age from createdAt if ageMinutes is missing
             const createdAt = new Date(transaction.timing.createdAt);
             const now = new Date();
@@ -886,9 +943,9 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({ classNam
                 onClick={async () => {
                   console.log('🧪 Testing API connection...');
                   try {
-                    const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/transactions/history?limit=1`, {
+                    const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/transactions/history?limit=1`, {
                       headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+                        'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
                         'Content-Type': 'application/json'
                       }
                     });

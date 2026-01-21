@@ -105,7 +105,7 @@ const Dashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">NexusPay Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">DotPay Dashboard</h1>
               <p className="text-gray-600 mt-1">Internal Platform Analytics</p>
             </div>
             <div className="flex items-center space-x-4">
@@ -571,7 +571,7 @@ const Dashboard: React.FC = () => {
                 <Database className="h-5 w-5 text-purple-500" />
                 <div>
                   <p className="text-sm font-medium">Data Source</p>
-                  <p className="text-xs text-gray-600">{platformStats?.dataSource || 'NexusPay Database'}</p>
+                  <p className="text-xs text-gray-600">{platformStats?.dataSource || 'DotPay Database'}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">

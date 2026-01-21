@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { businessV2API, BusinessAccount } from '@/lib/business-v2';
-import { businessPinAPI } from '@/lib/business-pin';
+import { generateMockBusinessAccounts, createMockResponse, simulateDelay, MockBusinessAccount } from '@/lib/mock-data';
+
+// Re-export type for compatibility
+export type BusinessAccount = MockBusinessAccount;
 
 export interface BusinessPinSession {
   verified: boolean;
@@ -75,24 +77,14 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Load user's business accounts
   const loadBusinessAccounts = async (): Promise<void> => {
     if (!user?.id && !user?.email && !user?.phoneNumber) {
-      console.log('No user authentication data found');
       return;
     }
     
     setIsLoadingBusinesses(true);
     try {
-      console.log('Loading business accounts for user:', user.id || user.email || user.phoneNumber);
-      
-      const response = await businessV2API.getUserBusinesses();
-      console.log('API Response:', response);
-      
-      if (response.success && response.data) {
-        console.log('Business accounts found:', response.data.businesses);
-        setBusinessAccounts(response.data.businesses);
-      } else {
-        console.error('Failed to load business accounts:', response.message);
-        setBusinessAccounts([]);
-      }
+      await simulateDelay(600);
+      const mockBusinesses = generateMockBusinessAccounts();
+      setBusinessAccounts(mockBusinesses);
     } catch (error) {
       console.error('Failed to load business accounts:', error);
       setBusinessAccounts([]);
@@ -132,22 +124,16 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Verify business PIN
   const verifyBusinessPin = async (businessId: string, pin: string): Promise<boolean> => {
     try {
-      console.log('BusinessContext - verifying PIN for business:', businessId);
-      const response = await businessPinAPI.verifyPin({ businessId, pin });
-      console.log('BusinessContext - PIN verification response:', response);
+      await simulateDelay(800);
       
-      if (response.success && response.data && response.data.verified) {
-        console.log('BusinessContext - Setting PIN session:', response.data);
-        
-        // Calculate expiration time (30 minutes from now)
+      // Mock PIN verification (accept any 4-6 digit PIN)
+      if (pin && pin.length >= 4 && pin.length <= 6) {
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-        
-        // Find the business to get additional details
         const business = businessAccounts.find(b => b.businessId === businessId);
         
         const newPinSession = {
           verified: true,
-          verifiedAt: response.data.verifiedAt,
+          verifiedAt: new Date().toISOString(),
           expiresAt: expiresAt,
           businessId: businessId,
           businessName: business?.businessName || '',
@@ -155,17 +141,11 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
         };
         
         setPinSession(newPinSession);
-        
-        // Also set the current business immediately to ensure state consistency
         if (business) {
           setCurrentBusiness(business);
-          console.log('BusinessContext - Current business set during PIN verification:', business.businessName);
         }
-        
-        console.log('BusinessContext - PIN verification successful, returning true');
         return true;
       }
-      console.log('BusinessContext - PIN verification failed, returning false');
       return false;
     } catch (error) {
       console.error('Failed to verify business PIN:', error);
@@ -176,19 +156,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Request OTP for PIN setting
   const requestPinSetupOtp = async (businessId: string): Promise<boolean> => {
     try {
-      const business = businessAccounts.find(b => b.businessId === businessId);
-      if (!business || !business.merchantId || !business.phoneNumber) {
-        console.error('Business not found or missing required data for businessId:', businessId);
-        return false;
-      }
-      
-      console.log('Requesting OTP for business:', business.merchantId, business.phoneNumber);
-      const response = await businessPinAPI.requestOtp({
-        merchantId: business.merchantId,
-        phoneNumber: business.phoneNumber
-      });
-      
-      return response.success;
+      await simulateDelay(500);
+      return true;
     } catch (error: any) {
       console.error('Failed to request PIN setup OTP:', error);
       return false;
@@ -198,24 +167,11 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Set business PIN with OTP
   const setBusinessPinWithOtp = async (businessId: string, otp: string, pin: string): Promise<boolean> => {
     try {
-      const business = businessAccounts.find(b => b.businessId === businessId);
-      if (!business || !business.merchantId || !business.phoneNumber) {
-        console.error('Business not found or missing required data for businessId:', businessId);
-        return false;
-      }
-      
-      console.log('Setting business PIN with OTP for:', business.merchantId);
-      const response = await businessPinAPI.setPin({
-        merchantId: business.merchantId,
-        phoneNumber: business.phoneNumber,
-        otp,
-        pin
-      });
-      
-      return response.success;
+      await simulateDelay(800);
+      // Mock: accept any OTP and PIN
+      return true;
     } catch (error: any) {
       console.error('Failed to set business PIN with OTP:', error);
-      console.error('Error response data:', error?.response?.data);
       return false;
     }
   };
@@ -229,8 +185,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Update business PIN
   const updateBusinessPin = async (businessId: string, oldPin: string, newPin: string): Promise<boolean> => {
     try {
-      const response = await businessPinAPI.updatePin({ businessId, oldPin, newPin });
-      return response.success;
+      await simulateDelay(800);
+      return true;
     } catch (error) {
       console.error('Failed to update business PIN:', error);
       return false;
@@ -240,8 +196,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Request PIN reset OTP
   const requestPinResetOtp = async (merchantId?: string, phoneNumber?: string): Promise<boolean> => {
     try {
-      const response = await businessPinAPI.forgotPinRequest({ merchantId, phoneNumber });
-      return response.success;
+      await simulateDelay(500);
+      return true;
     } catch (error) {
       console.error('Failed to request PIN reset OTP:', error);
       return false;
@@ -251,8 +207,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Forgot business PIN (confirm with OTP)
   const forgotBusinessPin = async (merchantId: string, phoneNumber: string, otp: string, newPin: string): Promise<boolean> => {
     try {
-      const response = await businessPinAPI.forgotPinConfirm({ merchantId, phoneNumber, otp, newPin });
-      return response.success;
+      await simulateDelay(800);
+      return true;
     } catch (error) {
       console.error('Failed to reset business PIN:', error);
       return false;

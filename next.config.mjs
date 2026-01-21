@@ -40,7 +40,7 @@ const withPWA = withPWAInit({
     disableDevLogs: true,
     runtimeCaching: [
       {
-        urlPattern: /^https:\/\/api\.nexuspaydefi\.xyz\/api\/.*/i,
+        urlPattern: /^https:\/\/api\.dotpay\.xyz\/api\/.*/i,
         handler: 'NetworkFirst',
         options: {
           cacheName: 'api-cache',

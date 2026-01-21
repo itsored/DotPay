@@ -57,11 +57,10 @@
 
 "use client";
 
-import useAxios from "@/hooks/useAxios";
-import { BalanceApiResponseType, BalanceContextType } from "@/types/api-types";
-import { useQuery } from "@tanstack/react-query";
+import { BalanceContextType } from "@/types/api-types";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useChain } from "@/context/ChainContext"; // Import useChain hook
+import { useChain } from "@/context/ChainContext";
+import { createMockResponse, simulateDelay } from "@/lib/mock-data";
 
 // Create the context
 const BalanceContext = createContext<BalanceContextType | null>(null);
@@ -80,37 +79,33 @@ export const BalanceProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { chain } = useChain(); // Get the selected chain from ChainContext
-  const [user, setUser] = useState<string | null>(null);
+  const { chain } = useChain();
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<any>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(storedUser);
-    }
-  }, []);
+    const fetchBalance = async () => {
+      setIsLoading(true);
+      try {
+        await simulateDelay(500);
+        const mockData = createMockResponse({
+          balance: '1000.00',
+          usdValue: '1000.00',
+          chain: chain || 'arbitrum',
+        });
+        setData(mockData);
+        setError(null);
+      } catch (err) {
+        setError(err);
+        setData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const api = useAxios();
-  let getUserfromLocalStorage: BalanceApiResponseType | null = null;
-
-  if (user) {
-    getUserfromLocalStorage = JSON.parse(user);
-  }
-
-  const walletAddress = getUserfromLocalStorage
-    ? chain === "arbitrum"
-      ? getUserfromLocalStorage.data.arbitrumWallet
-      : getUserfromLocalStorage.data.celoWallet
-    : null;
-
-  const { isLoading, data, error } = useQuery({
-    queryKey: ["getUserBalance", chain, walletAddress],
-    queryFn: () =>
-      api.get(`usdc/usdc-balance/${chain}/${walletAddress}`).then((res) => {
-        return res?.data;
-      }),
-    enabled: !!walletAddress, // Only run query if walletAddress is not null
-  });
+    fetchBalance();
+  }, [chain]);
 
   return (
     <BalanceContext.Provider value={{ isLoading, data, error }}>

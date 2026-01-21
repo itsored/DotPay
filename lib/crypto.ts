@@ -1,255 +1,107 @@
-import apiClient from './api';
+/**
+ * Crypto API - STUBBED OUT
+ * This file has been stubbed out for dummy frontend mode.
+ * All crypto functions return mock data.
+ */
 
-// Types for crypto operations
-export interface SendTokenData {
-  recipientIdentifier: string; // Email, phone, or wallet address
-  amount: number;
-  senderAddress: string;
-  chain: string;
-  tokenSymbol?: string; // Optional, defaults to USDC (matches API spec)
-  password?: string; // Required for security verification
-  googleAuthCode?: string; // Alternative to password
-}
+import { createMockResponse, simulateDelay } from './mock-data';
 
-export interface PayMerchantData {
-  senderAddress: string;
-  merchantId: string;
-  amount: number;
-  confirm: boolean;
-  chainName: string;
-  tokenSymbol: string;
-  googleAuthCode?: string; // Required for security verification
-}
+export type SendTokenData = { recipientIdentifier: string; amount: number; senderAddress: string; chain: string; tokenSymbol?: string; password?: string; googleAuthCode?: string };
+export type PayMerchantData = { senderAddress: string; merchantId: string; amount: number; confirm: boolean; chainName: string; tokenSymbol: string; googleAuthCode?: string };
+export type SendTokenResponse = { success: boolean; message: string; data: any };
+export type PayMerchantResponse = { success: boolean; message: string; data: any };
 
-export interface SendTokenResponse {
-  success: boolean;
-  message: string;
-  data: {
-    transactionCode: string;
-    transactionHash: string;
-    explorerUrl: string;
-    amount: string;
-    tokenSymbol: string;
-    chain: string;
-    sender: {
-      address: string;
-      phone?: string;
-      email?: string;
-    };
-    recipient: {
-      identifier: string;
-      address: string;
-      phone?: string;
-      email?: string;
-    };
-    timestamp: {
-      iso: string;
-      local: string;
-      unix: number;
-    };
-    transaction: {
-      hash: string;
-      explorerUrl: string;
-      chain: string;
-      token: string;
-      amount: number;
-      amountDisplay: string;
-      status: string;
-      confirmations: string;
-      gasUsed: string;
-      blockNumber: string;
-    };
-    security: {
-      level: string;
-      authMethod: string;
-      verified: boolean;
-      transactionType: string;
-    };
-    notifications: string[];
-  };
-}
-
-export interface SendTokenErrorResponse {
-  success: false;
-  message: string;
-  error: {
-    code: string;
-    message: string;
-    timestamp: string;
-    requestId: string;
-  };
-}
-
-// Specialized error shape for insufficient token balance responses
-export interface SendTokenInsufficientBalanceError {
-  response?: {
-    status?: number;
-    data?: {
-      success?: boolean;
-      message?: string;
-      error?: {
-        code?: string;
-        message?: string;
-        available?: number;
-        token?: string;
-        chain?: string;
-        timestamp?: string;
-      };
-    };
-  };
-}
-
-export const isInsufficientTokenBalanceError = (err: any): err is SendTokenInsufficientBalanceError => {
-  const code = err?.response?.data?.error?.code;
-  const status = err?.response?.status;
-  return status === 400 && code === 'INSUFFICIENT_TOKEN_BALANCE';
-};
-
-export interface PayMerchantResponse {
-  success: boolean;
-  message: string;
-  data: {
-    businessName: string;
-    transactionHash: string;
-    authenticationMethod: string;
-  };
-}
-
-export interface ReceiveInfoResponse {
-  success: boolean;
-  message: string;
-  data: {
-    walletAddress: string;
-    phoneNumber: string;
-    email: string;
-    supportedChains: Array<{
-      name: string;
-      id: string;
-      chainId: number;
-    }>;
-    note: string;
-  };
-}
-
-export interface BalanceResponse {
-  success: boolean;
-  message: string;
-  data: {
-    walletAddress: string;
-    totalUSDValue: number;
-    balances: Record<string, Record<string, number>>;
-    chainsWithBalance: number;
-    lastUpdated: string;
-  };
-}
-
-// Crypto API functions
 export const cryptoAPI = {
-  // Send crypto to any user
   sendToken: async (data: SendTokenData): Promise<SendTokenResponse> => {
-    console.log('cryptoAPI.sendToken called with data:', data);
-    console.log('Current auth token:', localStorage.getItem('nexuspay_token'));
-    
-    try {
-      const response = await apiClient.post('/token/sendToken', data);
-      console.log('cryptoAPI.sendToken response:', response);
-      return response.data;
-    } catch (error: any) {
-      console.error('cryptoAPI.sendToken error:', error);
-      console.error('Error response:', error.response);
-      console.error('Error status:', error.response?.status);
-      console.error('Error data:', error.response?.data);
-      
-      // Log the specific validation error details
-      if (error.response?.data?.error?.details) {
-        console.error('Validation error details:', error.response.data.error.details);
-      }
-      
-      throw error;
-    }
+    await simulateDelay(1000);
+    return createMockResponse({
+      transactionCode: `tx_${Date.now()}`,
+      transactionHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      explorerUrl: '#',
+      amount: data.amount.toString(),
+      tokenSymbol: data.tokenSymbol || 'USDC',
+      chain: data.chain,
+    }, 'Token sent successfully');
   },
-
-  // Pay merchant with crypto
   payMerchant: async (data: PayMerchantData): Promise<PayMerchantResponse> => {
-    const response = await apiClient.post('/token/pay', data);
-    return response.data;
-  },
-
-  // Get receive information
-  getReceiveInfo: async (): Promise<ReceiveInfoResponse> => {
-    const response = await apiClient.get('/token/receive');
-    return response.data;
-  },
-
-  // Get user balance
-  getBalance: async (): Promise<BalanceResponse> => {
-    const response = await apiClient.get('/token/balance');
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({
+      transactionCode: `tx_${Date.now()}`,
+      transactionHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      explorerUrl: '#',
+      amount: data.amount.toString(),
+      tokenSymbol: data.tokenSymbol,
+      chain: data.chainName,
+    }, 'Payment sent successfully');
   },
 };
 
-// Supported chains and tokens
-export const SUPPORTED_CHAINS = [
-  { name: 'Arbitrum', id: 'arbitrum', chainId: 42161 },
-  { name: 'Polygon', id: 'polygon', chainId: 137 },
-  { name: 'Base', id: 'base', chainId: 8453 },
-  { name: 'Optimism', id: 'optimism', chainId: 10 },
-  { name: 'Celo', id: 'celo', chainId: 42220 },
-  { name: 'Avalanche', id: 'avalanche', chainId: 43114 },
-  { name: 'BNB Chain', id: 'bnb', chainId: 56 },
-  { name: 'Scroll', id: 'scroll', chainId: 534352 },
-  { name: 'Gnosis', id: 'gnosis', chainId: 100 },
-  { name: 'Ethereum', id: 'ethereum', chainId: 1 },
-  { name: 'Fantom', id: 'fantom', chainId: 250 },
-  { name: 'Moonbeam', id: 'moonbeam', chainId: 1284 },
-  { name: 'Fuse', id: 'fuse', chainId: 122 },
-  { name: 'Aurora', id: 'aurora', chainId: 1313161554 },
-  { name: 'Lisk', id: 'lisk', chainId: 1890 },
-  { name: 'Somnia', id: 'somnia', chainId: 1919 },
-  { name: 'Stellar', id: 'stellar', chainId: 0 }, // Stellar doesn't use EVM chainId
-];
+// Validation utilities (keep for UI compatibility)
+export const isValidAddress = (address: string): boolean => {
+  if (!address) return false;
+  // Stellar address (starts with G)
+  if (address.startsWith('G') && address.length === 56) return true;
+  // EVM address (starts with 0x, 42 chars)
+  if (address.startsWith('0x') && address.length === 42) return true;
+  return false;
+};
 
+export const isValidStellarAddress = (address: string): boolean => {
+  return address.startsWith('G') && address.length === 56;
+};
+
+export const isValidEVMAddress = (address: string): boolean => {
+  return address.startsWith('0x') && address.length === 42;
+};
+
+// Supported tokens with symbol and name
 export const SUPPORTED_TOKENS = [
-  { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
-  { symbol: 'USDT', name: 'Tether', decimals: 6 },
-  { symbol: 'BTC', name: 'Bitcoin', decimals: 8 },
-  { symbol: 'ETH', name: 'Ethereum', decimals: 18 },
-  { symbol: 'WETH', name: 'Wrapped Ethereum', decimals: 18 },
-  { symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8 },
-  { symbol: 'DAI', name: 'Dai', decimals: 18 },
-  { symbol: 'CELO', name: 'Celo', decimals: 18 },
-  { symbol: 'XLM', name: 'Stellar Lumens', decimals: 7 },
-];
+  { symbol: 'USDC', name: 'USD Coin' },
+  { symbol: 'USDT', name: 'Tether USD' },
+  { symbol: 'BTC', name: 'Bitcoin' },
+  { symbol: 'ETH', name: 'Ethereum' },
+  { symbol: 'WETH', name: 'Wrapped Ethereum' },
+  { symbol: 'WBTC', name: 'Wrapped Bitcoin' },
+  { symbol: 'DAI', name: 'Dai Stablecoin' },
+  { symbol: 'CELO', name: 'Celo' },
+  { symbol: 'XLM', name: 'Stellar' },
+] as const;
 
-// Utility functions
-export const formatAmount = (amount: number, decimals: number = 6): string => {
-  return amount.toFixed(decimals);
-};
+// Supported chains with id and name
+export const SUPPORTED_CHAINS = [
+  { id: 'celo', name: 'Celo' },
+  { id: 'polygon', name: 'Polygon' },
+  { id: 'arbitrum', name: 'Arbitrum' },
+  { id: 'base', name: 'Base' },
+  { id: 'optimism', name: 'Optimism' },
+  { id: 'ethereum', name: 'Ethereum' },
+  { id: 'bnb', name: 'BNB Chain' },
+  { id: 'avalanche', name: 'Avalanche' },
+  { id: 'fantom', name: 'Fantom' },
+  { id: 'gnosis', name: 'Gnosis' },
+  { id: 'scroll', name: 'Scroll' },
+  { id: 'moonbeam', name: 'Moonbeam' },
+  { id: 'fuse', name: 'Fuse' },
+  { id: 'aurora', name: 'Aurora' },
+  { id: 'lisk', name: 'Lisk' },
+  { id: 'somnia', name: 'Somnia' },
+  { id: 'stellar', name: 'Stellar' },
+] as const;
 
+// Validation function for recipient identifier
 export const validateRecipientIdentifier = (identifier: string): boolean => {
+  if (!identifier) return false;
+  
   // Check if it's an email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (emailRegex.test(identifier)) return true;
   
-  // Check if it's a phone number
+  // Check if it's a phone number (basic check)
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  if (phoneRegex.test(identifier)) return true;
+  if (phoneRegex.test(identifier.replace(/\s/g, ''))) return true;
   
-  // Check if it's an EVM wallet address
-  const evmWalletRegex = /^0x[a-fA-F0-9]{40}$/;
-  if (evmWalletRegex.test(identifier)) return true;
-  
-  // Check if it's a Stellar address (starts with G and is 56 characters)
-  const stellarRegex = /^G[A-Z0-9]{55}$/;
-  if (stellarRegex.test(identifier)) return true;
+  // Check if it's a wallet address (EVM or Stellar)
+  if (isValidAddress(identifier)) return true;
   
   return false;
-};
-
-export const getChainById = (chainId: string) => {
-  return SUPPORTED_CHAINS.find(chain => chain.id === chainId);
-};
-
-export const getTokenBySymbol = (symbol: string) => {
-  return SUPPORTED_TOKENS.find(token => token.symbol === symbol);
 };

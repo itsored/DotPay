@@ -1,14 +1,32 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { walletAPI, WalletDetails, BalanceData, SendTokenData, PayMerchantData, TransferEvent } from "../lib/wallet";
-import { mpesaAPI, DepositData, WithdrawData, PayWithCryptoData } from "../lib/mpesa";
-import { liquidityAPI, LiquidityPosition, ProvideLiquidityData } from "../lib/liquidity";
-import { transactionAPI } from "../lib/transactions";
-import { Transaction } from "../types/transaction-types";
 import { useAuth } from "./AuthContext";
 import toast from "react-hot-toast";
-import { stellarWalletAPI, StellarBalance } from "../lib/stellar";
+import {
+  generateMockWallet,
+  generateMockBalance,
+  generateMockStellarWallet,
+  generateMockTransactions,
+  createMockResponse,
+  simulateDelay,
+  MockWalletDetails,
+  MockBalanceData,
+} from "../lib/mock-data";
+
+// Re-export types for compatibility
+export type WalletDetails = MockWalletDetails;
+export type BalanceData = MockBalanceData;
+export type StellarBalance = { asset: string; balance: string; usdValue: string };
+export type SendTokenData = { to: string; amount: string; token: string; chain: string };
+export type PayMerchantData = { merchantId: string; amount: string; token: string; chain: string; description?: string };
+export type TransferEvent = { id: string; from: string; to: string; amount: string; token: string; chain: string; txHash: string; timestamp: string; status: 'pending' | 'confirmed' | 'failed'; type: 'send' | 'receive' | 'payment' };
+export type DepositData = { amount: string; phoneNumber: string };
+export type WithdrawData = { amount: string; phoneNumber: string; token?: string; chain?: string };
+export type PayWithCryptoData = { merchantId: string; amount: string; token: string; chain: string };
+export type LiquidityPosition = { id: string; tokenA: string; tokenB: string; amount: string; chain: string };
+export type ProvideLiquidityData = { tokenA: string; tokenB: string; amountA: string; amountB: string; chain: string };
+export type Transaction = { id: string; type: string; amount: string; token: string; chain: string; status: string; timestamp: string };
 
 // Supported chains and tokens
 export const SUPPORTED_CHAINS = [
@@ -95,35 +113,15 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     if (!isAuthenticated || !user) return;
     
     try {
-      console.log('🌟 [Stellar] Refreshing Stellar wallet for user:', user.email || user.phoneNumber);
-      const response = await stellarWalletAPI.getWallet();
-      
-      if (response.success) {
-        setStellarWallet({
-          accountId: response.data.accountId,
-          balances: response.data.balances,
-          isActive: response.data.isActive,
-        });
-        console.log('🌟 [Stellar] Wallet loaded successfully:', {
-          accountId: response.data.accountId,
-          balances: response.data.balances.length,
-          isActive: response.data.isActive
-        });
-        toast.success('Stellar wallet loaded! 🌟');
-      }
+      await simulateDelay(500);
+      const mockStellarWallet = generateMockStellarWallet();
+      setStellarWallet({
+        accountId: mockStellarWallet.accountId,
+        balances: mockStellarWallet.balances,
+        isActive: mockStellarWallet.isActive,
+      });
     } catch (error: any) {
-      console.error('🌟 [Stellar] Failed to load Stellar wallet:', error);
-      
-      // Don't show error for 404 (wallet doesn't exist yet)
-      if (error.response?.status === 404) {
-        console.log('🌟 [Stellar] Wallet not found (404) - User needs to create one');
-        console.log('🌟 [Stellar] Visit /wallet page to create your Stellar wallet');
-        // Optionally auto-create the wallet
-        // await initializeStellarWallet().catch(() => {});
-      } else if (error.response?.status !== 403 && error.response?.status !== 401) {
-        // Don't show error for auth issues, just log
-        console.error('🌟 [Stellar] Unexpected error:', error.response?.data || error.message);
-      }
+      console.error('Failed to load Stellar wallet:', error);
     }
   };
 
@@ -132,7 +130,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     if (isAuthenticated && user) {
       console.log('User authenticated, attempting to refresh wallets');
       console.log('User token:', user.token);
-      console.log('Token in localStorage:', localStorage.getItem('nexuspay_token'));
+      console.log('Token in localStorage:', localStorage.getItem('dotpay_token'));
       refreshWallet();
       refreshStellarWallet();
     } else {
@@ -148,68 +146,16 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       setRefreshing(true);
-      console.log('Refreshing wallet for user:', user);
+      await simulateDelay(600);
       
-      // Get both wallet info and balance data
-      const [walletResponse, balanceResponse] = await Promise.allSettled([
-        walletAPI.getReceiveInfo(),
-        walletAPI.getBalance()
-      ]);
+      const mockWallet = generateMockWallet(user);
+      const mockBalance = generateMockBalance(user.walletAddress);
       
-      // Handle wallet info
-      if (walletResponse.status === 'fulfilled' && walletResponse.value.success) {
-        const walletData: WalletDetails = {
-          walletAddress: walletResponse.value.data.walletAddress,
-          phoneNumber: walletResponse.value.data.phoneNumber,
-          email: walletResponse.value.data.email,
-          supportedChains: walletResponse.value.data.supportedChains,
-          note: walletResponse.value.data.note,
-          // Legacy compatibility fields
-          address: walletResponse.value.data.walletAddress,
-          chains: walletResponse.value.data.supportedChains.map(chain => chain.id),
-          totalUsdValue: "0",
-          balances: []
-        };
-        setWallet(walletData);
-        console.log('Wallet data loaded:', walletData);
-      } else if (walletResponse.status === 'rejected') {
-        console.error('Failed to load wallet info:', walletResponse.reason);
-        
-        // Check if it's a 403 error - user might need wallet setup
-        if (walletResponse.reason?.response?.status === 403) {
-          console.log('User needs wallet setup - 403 error on /token/receive');
-          // Don't show error toast, this is expected for new Google users
-        } else {
-          console.error('Unexpected error loading wallet:', walletResponse.reason);
-        }
-      }
-      
-      // Handle balance data
-      if (balanceResponse.status === 'fulfilled' && balanceResponse.value.success) {
-        setBalance(balanceResponse.value.data);
-        console.log('Balance data loaded:', balanceResponse.value.data);
-      } else if (balanceResponse.status === 'rejected') {
-        console.error('Failed to load balance data:', balanceResponse.reason);
-        
-        // Check if it's a 403 error - user might need wallet setup
-        if (balanceResponse.reason?.response?.status === 403) {
-          console.log('User needs wallet setup - 403 error on /token/balance');
-          // Don't show error toast, this is expected for new Google users
-        } else {
-          console.error('Unexpected error loading balance:', balanceResponse.reason);
-        }
-      }
-      
+      setWallet(mockWallet);
+      setBalance(mockBalance);
     } catch (error: any) {
       console.error('Failed to refresh wallet:', error);
-      
-      // Check if it's an authentication error
-      if (error.response?.status === 400 || error.response?.status === 401) {
-        console.log('Authentication issue - user may not have wallet yet');
-        // Don't show error toast for auth issues, just log it
-      } else {
-        toast.error(error.message || 'Failed to load wallet data');
-      }
+      toast.error('Failed to load wallet data');
     } finally {
       setRefreshing(false);
     }
@@ -223,48 +169,17 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       setLoading(true);
-      console.log('Initializing wallet for user:', user);
+      await simulateDelay(800);
       
-      // Try to call the receive endpoint to initialize/create wallet
-      const response = await walletAPI.getReceiveInfo();
+      const mockWallet = generateMockWallet(user);
+      const mockBalance = generateMockBalance(user.walletAddress);
       
-      if (response.success) {
-        const walletData: WalletDetails = {
-          walletAddress: response.data.walletAddress,
-          phoneNumber: response.data.phoneNumber,
-          email: response.data.email,
-          supportedChains: response.data.supportedChains,
-          note: response.data.note,
-          // Legacy compatibility fields
-          address: response.data.walletAddress,
-          chains: response.data.supportedChains.map(chain => chain.id),
-          totalUsdValue: "0",
-          balances: []
-        };
-        setWallet(walletData);
-        toast.success('Wallet initialized successfully!');
-        
-        // Try to load balance after wallet initialization
-        try {
-          const balanceResponse = await walletAPI.getBalance();
-          if (balanceResponse.success) {
-            setBalance(balanceResponse.data);
-          }
-        } catch (balanceError) {
-          console.log('Balance not available yet, but wallet is initialized');
-        }
-        
-      } else {
-        throw new Error(response.message || 'Failed to initialize wallet');
-      }
+      setWallet(mockWallet);
+      setBalance(mockBalance);
+      toast.success('Wallet initialized successfully!');
     } catch (error: any) {
       console.error('Failed to initialize wallet:', error);
-      
-      if (error.response?.status === 403) {
-        toast.error('Unable to initialize wallet. Please contact support.');
-      } else {
-        toast.error(error.message || 'Failed to initialize wallet');
-      }
+      toast.error('Failed to initialize wallet');
       throw error;
     } finally {
       setLoading(false);
@@ -279,28 +194,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     
     try {
       setLoading(true);
-      console.log('Initializing Stellar wallet for user:', user);
+      await simulateDelay(800);
       
-      const response = await stellarWalletAPI.createWallet();
-      
-      if (response.success) {
-        setStellarWallet({
-          accountId: response.data.accountId,
-          balances: response.data.balances,
-          isActive: response.data.isActive,
-        });
-        toast.success('Stellar wallet created successfully!');
-      } else {
-        throw new Error(response.message || 'Failed to create Stellar wallet');
-      }
+      const mockStellarWallet = generateMockStellarWallet();
+      setStellarWallet({
+        accountId: mockStellarWallet.accountId,
+        balances: mockStellarWallet.balances,
+        isActive: mockStellarWallet.isActive,
+      });
+      toast.success('Stellar wallet created successfully!');
     } catch (error: any) {
       console.error('Failed to initialize Stellar wallet:', error);
-      
-      if (error.response?.status === 403) {
-        toast.error('Unable to create Stellar wallet. Please contact support.');
-      } else {
-        toast.error(error.message || 'Failed to create Stellar wallet');
-      }
+      toast.error('Failed to create Stellar wallet');
       throw error;
     } finally {
       setLoading(false);
@@ -311,18 +216,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const sendToken = async (data: SendTokenData) => {
     try {
       setLoading(true);
-      const response = await walletAPI.sendToken(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Transaction sent successfully');
-        await refreshWallet(); // Refresh wallet after successful transaction
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+        status: 'pending',
+      }, 'Transaction sent successfully');
+      
+      toast.success('Transaction sent successfully');
+      await refreshWallet();
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Transaction failed';
-      toast.error(message);
+      toast.error('Transaction failed');
       throw error;
     } finally {
       setLoading(false);
@@ -333,18 +238,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const payMerchant = async (data: PayMerchantData) => {
     try {
       setLoading(true);
-      const response = await walletAPI.payMerchant(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Payment sent successfully');
-        await refreshWallet();
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+        status: 'pending',
+      }, 'Payment sent successfully');
+      
+      toast.success('Payment sent successfully');
+      await refreshWallet();
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Payment failed';
-      toast.error(message);
+      toast.error('Payment failed');
       throw error;
     } finally {
       setLoading(false);
@@ -354,16 +259,22 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   // Get transfer history
   const getTransferHistory = async (): Promise<TransferEvent[]> => {
     try {
-      const response = await walletAPI.getTransferEvents();
-      
-      if (response.success) {
-        return response.data;
-      } else {
-        throw new Error(response.message);
-      }
+      await simulateDelay(500);
+      const mockTransactions = generateMockTransactions(10);
+      return mockTransactions.map(tx => ({
+        id: tx.id,
+        from: tx.from || '',
+        to: tx.to || '',
+        amount: tx.amount,
+        token: tx.token,
+        chain: tx.chain,
+        txHash: tx.txHash || '',
+        timestamp: tx.timestamp,
+        status: tx.status as 'pending' | 'confirmed' | 'failed',
+        type: tx.type as 'send' | 'receive' | 'payment',
+      }));
     } catch (error: any) {
       console.error('Failed to get transfer history:', error);
-      toast.error('Failed to load transfer history');
       return [];
     }
   };
@@ -372,17 +283,17 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const depositViaMpesa = async (data: DepositData) => {
     try {
       setLoading(true);
-      const response = await mpesaAPI.deposit(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Deposit initiated successfully');
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        transactionId: `mpesa_${Date.now()}`,
+        status: 'pending',
+      }, 'Deposit initiated successfully');
+      
+      toast.success('Deposit initiated successfully');
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Deposit failed';
-      toast.error(message);
+      toast.error('Deposit failed');
       throw error;
     } finally {
       setLoading(false);
@@ -393,18 +304,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const withdrawToMpesa = async (data: WithdrawData) => {
     try {
       setLoading(true);
-      const response = await mpesaAPI.withdraw(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Withdrawal initiated successfully');
-        await refreshWallet();
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        transactionId: `mpesa_${Date.now()}`,
+        status: 'pending',
+      }, 'Withdrawal initiated successfully');
+      
+      toast.success('Withdrawal initiated successfully');
+      await refreshWallet();
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Withdrawal failed';
-      toast.error(message);
+      toast.error('Withdrawal failed');
       throw error;
     } finally {
       setLoading(false);
@@ -415,18 +326,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const payWithCrypto = async (data: PayWithCryptoData) => {
     try {
       setLoading(true);
-      const response = await mpesaAPI.payWithCrypto(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Payment sent successfully');
-        await refreshWallet();
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+        status: 'pending',
+      }, 'Payment sent successfully');
+      
+      toast.success('Payment sent successfully');
+      await refreshWallet();
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Payment failed';
-      toast.error(message);
+      toast.error('Payment failed');
       throw error;
     } finally {
       setLoading(false);
@@ -437,18 +348,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   const provideLiquidity = async (data: ProvideLiquidityData) => {
     try {
       setLoading(true);
-      const response = await liquidityAPI.provideLiquidity(data);
+      await simulateDelay(1000);
       
-      if (response.success) {
-        toast.success('Liquidity provided successfully');
-        await refreshWallet();
-        return response;
-      } else {
-        throw new Error(response.message);
-      }
+      const response = createMockResponse({
+        positionId: `pos_${Date.now()}`,
+        status: 'active',
+      }, 'Liquidity provided successfully');
+      
+      toast.success('Liquidity provided successfully');
+      await refreshWallet();
+      return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || error.message || 'Failed to provide liquidity';
-      toast.error(message);
+      toast.error('Failed to provide liquidity');
       throw error;
     } finally {
       setLoading(false);
@@ -458,16 +369,18 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   // Get liquidity positions
   const getLiquidityPositions = async (): Promise<LiquidityPosition[]> => {
     try {
-      const response = await liquidityAPI.getPositions();
-      
-      if (response.success) {
-        return response.data;
-      } else {
-        throw new Error(response.message);
-      }
+      await simulateDelay(500);
+      return [
+        {
+          id: 'pos_1',
+          tokenA: 'USDC',
+          tokenB: 'USDT',
+          amount: '1000.00',
+          chain: 'arbitrum',
+        },
+      ];
     } catch (error: any) {
       console.error('Failed to get liquidity positions:', error);
-      toast.error('Failed to load liquidity positions');
       return [];
     }
   };
@@ -475,16 +388,10 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   // Get transaction history
   const getTransactionHistory = async (filters?: any): Promise<Transaction[]> => {
     try {
-      const response = await transactionAPI.getHistory(filters);
-      
-      if (response.success) {
-        return response.data.transactions;
-      } else {
-        throw new Error(response.message);
-      }
+      await simulateDelay(500);
+      return generateMockTransactions(20);
     } catch (error: any) {
       console.error('Failed to get transaction history:', error);
-      toast.error('Failed to load transaction history');
       return [];
     }
   };

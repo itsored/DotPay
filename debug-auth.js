@@ -5,28 +5,28 @@ function checkAuthStatus() {
   console.log('=== Authentication Status Check ===');
   
   // Check localStorage
-  const nexuspayToken = localStorage.getItem('nexuspay_token');
+  const dotpayToken = localStorage.getItem('dotpay_token');
   const user = localStorage.getItem('user');
-  const nexuspayUser = localStorage.getItem('nexuspay_user');
+  const dotpayUser = localStorage.getItem('dotpay_user');
   
-  console.log('1. nexuspay_token:', nexuspayToken ? 'Present' : 'Missing');
+  console.log('1. dotpay_token:', dotpayToken ? 'Present' : 'Missing');
   console.log('2. user:', user ? 'Present' : 'Missing');
-  console.log('3. nexuspay_user:', nexuspayUser ? 'Present' : 'Missing');
+  console.log('3. dotpay_user:', dotpayUser ? 'Present' : 'Missing');
   
   // Check sessionStorage
-  const sessionToken = sessionStorage.getItem('nexuspay_token');
+  const sessionToken = sessionStorage.getItem('dotpay_token');
   const sessionUser = sessionStorage.getItem('user');
   
-  console.log('4. sessionStorage nexuspay_token:', sessionToken ? 'Present' : 'Missing');
+  console.log('4. sessionStorage dotpay_token:', sessionToken ? 'Present' : 'Missing');
   console.log('5. sessionStorage user:', sessionUser ? 'Present' : 'Missing');
   
   // Try to parse the token
-  if (nexuspayToken) {
+  if (dotpayToken) {
     try {
-      const parsed = JSON.parse(nexuspayToken);
-      console.log('6. Parsed nexuspay_token:', parsed);
+      const parsed = JSON.parse(dotpayToken);
+      console.log('6. Parsed dotpay_token:', parsed);
     } catch (e) {
-      console.log('6. nexuspay_token (raw):', nexuspayToken.substring(0, 50) + '...');
+      console.log('6. dotpay_token (raw):', dotpayToken.substring(0, 50) + '...');
     }
   }
   

@@ -1,7 +1,7 @@
 {
-  "id": "nexuspay-app-v2",
-  "name": "NexusPay - Stablecoin Wallet",
-  "short_name": "NexusPay",
+  "id": "dotpay-app-v2",
+  "name": "DotPay - Stablecoin Wallet",
+  "short_name": "DotPay",
   "description": "Secure stablecoin payment wallet for fast, low-cost transactions",
   "start_url": "/",
   "scope": "/",

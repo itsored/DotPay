@@ -1,31 +1,35 @@
-import apiClient from './api';
+/**
+ * Earn V2 API - STUBBED OUT
+ * This file has been stubbed out for dummy frontend mode.
+ */
+
+import { createMockResponse, simulateDelay } from './mock-data';
 import { ApiEnvelope } from './business-v2';
 
-export interface EarnDepositRequest {
-  businessId: string;
-  amount: string;
-  asset: string; // e.g., USDC
-}
-
-export interface EarnWithdrawRequest {
-  businessId: string;
-  amount: string;
-  asset: string;
-}
+export type EarnDepositRequest = { businessId: string; amount: string; asset: string };
+export type EarnWithdrawRequest = { businessId: string; amount: string; asset: string };
 
 export const earnV2API = {
-  // POST /api/earn/v2/deposit
   deposit: async (payload: EarnDepositRequest): Promise<ApiEnvelope<{ sharesMinted: string; poolBalance: string }>> => {
-    const res = await apiClient.post('/earn/v2/deposit', payload);
-    return res.data;
+    await simulateDelay(1000);
+    return {
+      success: true,
+      message: 'Deposit successful',
+      data: {
+        sharesMinted: payload.amount,
+        poolBalance: '1000000.00',
+      },
+    };
   },
-
-  // POST /api/earn/v2/withdraw
   withdraw: async (payload: EarnWithdrawRequest): Promise<ApiEnvelope<{ amountReceived: string; poolBalance: string }>> => {
-    const res = await apiClient.post('/earn/v2/withdraw', payload);
-    return res.data;
+    await simulateDelay(1000);
+    return {
+      success: true,
+      message: 'Withdrawal successful',
+      data: {
+        amountReceived: payload.amount,
+        poolBalance: '900000.00',
+      },
+    };
   },
 };
-
-
-

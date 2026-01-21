@@ -118,7 +118,7 @@ const PWAUpdateNotification: React.FC<PWAUpdateNotificationProps> = ({ onUpdate,
                   Update Available
                 </DialogTitle>
                 <DialogDescription className="text-gray-600">
-                  A new version of NexusPay is ready
+                  A new version of DotPay is ready
                 </DialogDescription>
               </div>
             </div>

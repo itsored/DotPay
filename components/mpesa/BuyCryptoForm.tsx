@@ -37,8 +37,8 @@ export const BuyCryptoForm: React.FC = () => {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem('nexuspay_token');
-    const user = localStorage.getItem('nexuspay_user');
+    const token = localStorage.getItem('dotpay_token');
+    const user = localStorage.getItem('dotpay_user');
     
     setAuthStatus({
       hasToken: !!token,

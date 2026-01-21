@@ -30,7 +30,7 @@ export const BusinessCreationForm: React.FC = () => {
 
   useEffect(() => {
     // Auto-fill phone number from user account
-    const user = localStorage.getItem('nexuspay_user');
+    const user = localStorage.getItem('dotpay_user');
     if (user) {
       const userData = JSON.parse(user);
       setFormData(prev => ({
@@ -54,8 +54,8 @@ export const BusinessCreationForm: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('nexuspay_token');
-      const user = localStorage.getItem('nexuspay_user');
+      const token = localStorage.getItem('dotpay_token');
+      const user = localStorage.getItem('dotpay_user');
       
       if (!token || !user) {
         router.push('/login');
@@ -64,7 +64,7 @@ export const BusinessCreationForm: React.FC = () => {
 
       const userData = JSON.parse(user);
 
-      const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/request-upgrade`, {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/request-upgrade`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,8 +108,8 @@ export const BusinessCreationForm: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem('nexuspay_token');
-      const user = localStorage.getItem('nexuspay_user');
+      const token = localStorage.getItem('dotpay_token');
+      const user = localStorage.getItem('dotpay_user');
       
       if (!token || !user) {
         router.push('/login');
@@ -118,7 +118,7 @@ export const BusinessCreationForm: React.FC = () => {
 
       const userData = JSON.parse(user);
 
-      const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/complete-upgrade`, {
+      const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/complete-upgrade`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

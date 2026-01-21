@@ -32,7 +32,7 @@ export const TransactionExport: React.FC<TransactionExportProps> = ({
       
       // Generate filename with timestamp
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `nexuspay-transactions-${timestamp}.${exportFormat}`;
+      const filename = `dotpay-transactions-${timestamp}.${exportFormat}`;
       link.download = filename;
       
       // Trigger download

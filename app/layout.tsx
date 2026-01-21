@@ -18,18 +18,18 @@ import PWAUpdateNotification from "@/components/pwa/PWAUpdateNotification";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  applicationName: "NexusPay",
+  applicationName: "DotPay",
   title: {
-    default: "NexusPay - Stablecoin Wallet",
-    template: "NexusPay - %s",
+    default: "DotPay - Stablecoin Wallet",
+    template: "DotPay - %s",
   },
-  metadataBase: new URL("https://app.nexuspaydefi.xyz"),
+  metadataBase: new URL("https://app.dotpay.xyz"),
   description: "Secure stablecoin payment wallet for fast, low-cost transactions. Send, receive, and manage your digital assets with ease.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "NexusPay",
+    title: "DotPay",
     startupImage: [
       {
         url: "/icons/icon-512x512.png",
@@ -42,10 +42,10 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "NexusPay",
+    siteName: "DotPay",
     title: {
-      default: "NexusPay - Stablecoin Wallet",
-      template: "NexusPay - %s",
+      default: "DotPay - Stablecoin Wallet",
+      template: "DotPay - %s",
     },
     description: "Secure stablecoin payment wallet for fast, low-cost transactions",
     images: [
@@ -53,23 +53,23 @@ export const metadata: Metadata = {
         url: "/icons/icon-512x512.png",
         width: 512,
         height: 512,
-        alt: "NexusPay Logo",
+        alt: "DotPay Logo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: {
-      default: "NexusPay - Stablecoin Wallet",
-      template: "NexusPay - %s",
+      default: "DotPay - Stablecoin Wallet",
+      template: "DotPay - %s",
     },
     description: "Secure stablecoin payment wallet for fast, low-cost transactions",
     images: ["/icons/icon-512x512.png"],
   },
   keywords: ["stablecoin", "crypto", "wallet", "payments", "defi", "blockchain"],
-  authors: [{ name: "NexusPay Team" }],
-  creator: "NexusPay",
-  publisher: "NexusPay",
+  authors: [{ name: "DotPay Team" }],
+  creator: "DotPay",
+  publisher: "DotPay",
   robots: {
     index: true,
     follow: true,
@@ -103,10 +103,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <script src="https://accounts.google.com/gsi/client" async defer></script>
-        <meta name="application-name" content="NexusPay" />
+        <meta name="application-name" content="DotPay" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="NexusPay" />
+        <meta name="apple-mobile-web-app-title" content="DotPay" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-config" content="/icons/browserconfig.xml" />
@@ -126,17 +126,17 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico" />
         
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:url" content="https://app.nexuspaydefi.xyz" />
-        <meta name="twitter:title" content="NexusPay - Stablecoin Wallet" />
+        <meta name="twitter:url" content="https://app.dotpay.xyz" />
+        <meta name="twitter:title" content="DotPay - Stablecoin Wallet" />
         <meta name="twitter:description" content="Secure stablecoin payment wallet for fast, low-cost transactions" />
-        <meta name="twitter:image" content="https://app.nexuspaydefi.xyz/icons/icon-192x192.png" />
-        <meta name="twitter:creator" content="@nexuspay" />
+        <meta name="twitter:image" content="https://app.dotpay.xyz/icons/icon-192x192.png" />
+        <meta name="twitter:creator" content="@dotpay" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="NexusPay - Stablecoin Wallet" />
+        <meta property="og:title" content="DotPay - Stablecoin Wallet" />
         <meta property="og:description" content="Secure stablecoin payment wallet for fast, low-cost transactions" />
-        <meta property="og:site_name" content="NexusPay" />
-        <meta property="og:url" content="https://app.nexuspaydefi.xyz" />
-        <meta property="og:image" content="https://app.nexuspaydefi.xyz/icons/icon-512x512.png" />
+        <meta property="og:site_name" content="DotPay" />
+        <meta property="og:url" content="https://app.dotpay.xyz" />
+        <meta property="og:image" content="https://app.dotpay.xyz/icons/icon-512x512.png" />
       </head>
       <body className={inter.className}>
         {/* Suppress console logs in production */}

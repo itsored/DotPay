@@ -24,7 +24,7 @@ export const SendCryptoToMpesaForm: React.FC = () => {
   const [password, setPassword] = useState('');
 
   useEffect(() => {
-    const user = localStorage.getItem('nexuspay_user');
+    const user = localStorage.getItem('dotpay_user');
     if (user) {
       const userData = JSON.parse(user);
       setFormData(prev => ({ ...prev, recipientPhone: userData.phoneNumber || '' }));
@@ -42,7 +42,7 @@ export const SendCryptoToMpesaForm: React.FC = () => {
     setResult(null);
 
     // Check authentication first
-    const token = localStorage.getItem('nexuspay_token');
+    const token = localStorage.getItem('dotpay_token');
     if (!token) {
       setError('You must be logged in to send crypto. Please login first.');
       return;

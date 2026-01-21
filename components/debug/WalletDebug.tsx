@@ -47,7 +47,7 @@ const WalletDebug: React.FC = () => {
         </div>
         
         <div>
-          <strong>Token in localStorage:</strong> {localStorage.getItem('nexuspay_token') ? "Yes" : "No"}
+          <strong>Token in localStorage:</strong> {localStorage.getItem('dotpay_token') ? "Yes" : "No"}
         </div>
         
         <div>

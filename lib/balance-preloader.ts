@@ -20,7 +20,7 @@ export class BalancePreloader {
     // Add request interceptor to include auth token
     this.api.interceptors.request.use(
       (config: any) => {
-        const token = localStorage.getItem('nexuspay_token') || localStorage.getItem('user');
+        const token = localStorage.getItem('dotpay_token') || localStorage.getItem('user');
         if (token) {
           try {
             const parsedToken = token.startsWith('{') ? JSON.parse(token)?.data?.token || JSON.parse(token)?.token : token;
@@ -77,7 +77,7 @@ export class BalancePreloader {
             data: balanceData,
             timestamp: Date.now()
           };
-          localStorage.setItem('nexuspay_balance_cache', JSON.stringify(cacheData));
+          localStorage.setItem('dotpay_balance_cache', JSON.stringify(cacheData));
         } catch (error) {
           console.error('Error caching balance in localStorage:', error);
         }
@@ -114,7 +114,7 @@ export class BalancePreloader {
   // Clear cache
   public clearCache(): void {
     this.cache.clear();
-    localStorage.removeItem('nexuspay_balance_cache');
+    localStorage.removeItem('dotpay_balance_cache');
   }
 
   // Check if preload is in progress

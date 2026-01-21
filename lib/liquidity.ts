@@ -1,82 +1,56 @@
-import apiClient from './api';
+/**
+ * Liquidity API - STUBBED OUT
+ * This file has been stubbed out for dummy frontend mode.
+ * All liquidity functions return mock data.
+ */
+
+import { createMockResponse, simulateDelay } from './mock-data';
 import { ApiResponse } from './wallet';
 
-// Types
-export interface ProvideLiquidityData {
-  token: string;
-  amount: string;
-  chain: string;
-  lockPeriod?: number; // in days
-}
+export type ProvideLiquidityData = { token: string; amount: string; chain: string; lockPeriod?: number };
+export type LiquidityPosition = { id: string; token: string; amount: string; chain: string; apy: string; lockPeriod: number; unlockDate: string; rewards: string; status: 'active' | 'unlocking' | 'withdrawn'; createdAt: string };
+export type LiquidityStats = { token: string; chain: string; totalLiquidity: string; currentApy: string; totalRewards: string; participantCount: number; averageLockPeriod: number };
+export type InitiateWithdrawalData = { positionId: string; amount?: string };
+export type ConfirmWithdrawalData = { withdrawalId: string; signature: string };
 
-export interface LiquidityPosition {
-  id: string;
-  token: string;
-  amount: string;
-  chain: string;
-  apy: string;
-  lockPeriod: number;
-  unlockDate: string;
-  rewards: string;
-  status: 'active' | 'unlocking' | 'withdrawn';
-  createdAt: string;
-}
-
-export interface LiquidityStats {
-  token: string;
-  chain: string;
-  totalLiquidity: string;
-  currentApy: string;
-  totalRewards: string;
-  participantCount: number;
-  averageLockPeriod: number;
-}
-
-export interface InitiateWithdrawalData {
-  positionId: string;
-  amount?: string; // partial withdrawal
-}
-
-export interface ConfirmWithdrawalData {
-  withdrawalId: string;
-  signature: string;
-}
-
-// Liquidity Operations API
 export const liquidityAPI = {
-  // Provide liquidity
   provideLiquidity: async (data: ProvideLiquidityData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/liquidity/provide', data);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({ positionId: `pos_${Date.now()}` }, 'Liquidity provided');
   },
-
-  // Get user's liquidity positions
   getPositions: async (): Promise<ApiResponse<LiquidityPosition[]>> => {
-    const response = await apiClient.get('/liquidity/positions');
-    return response.data;
+    await simulateDelay(500);
+    return createMockResponse([{
+      id: 'pos_1',
+      token: 'USDC',
+      amount: '1000.00',
+      chain: 'arbitrum',
+      apy: '5.5',
+      lockPeriod: 30,
+      unlockDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      rewards: '50.00',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    }]);
   },
-
-  // Get liquidity stats for a token
-  getStats: async (token: string): Promise<ApiResponse<LiquidityStats>> => {
-    const response = await apiClient.get(`/liquidity/stats/${token}`);
-    return response.data;
+  getStats: async (token: string, chain: string): Promise<ApiResponse<LiquidityStats>> => {
+    await simulateDelay(300);
+    return createMockResponse({
+      token,
+      chain,
+      totalLiquidity: '100000.00',
+      currentApy: '5.5',
+      totalRewards: '5000.00',
+      participantCount: 100,
+      averageLockPeriod: 30,
+    });
   },
-
-  // Initiate liquidity withdrawal
   initiateWithdrawal: async (data: InitiateWithdrawalData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/liquidity/withdraw/initiate', data);
-    return response.data;
+    await simulateDelay(500);
+    return createMockResponse({ withdrawalId: `wd_${Date.now()}` }, 'Withdrawal initiated');
   },
-
-  // Confirm liquidity withdrawal
   confirmWithdrawal: async (data: ConfirmWithdrawalData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/liquidity/withdraw/confirm', data);
-    return response.data;
-  },
-
-  // Delete liquidity position
-  deletePosition: async (positionId: string): Promise<ApiResponse> => {
-    const response = await apiClient.delete(`/liquidity/position/${positionId}`);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({}, 'Withdrawal confirmed');
   },
 };

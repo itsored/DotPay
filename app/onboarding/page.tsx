@@ -101,7 +101,7 @@ const Onboarding = () => {
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px]">
                           <DialogHeader>
-                            <DialogTitle>Choose NexusPay Account Type</DialogTitle>
+                            <DialogTitle>Choose DotPay Account Type</DialogTitle>
                           </DialogHeader>
 
                           <Link

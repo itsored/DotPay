@@ -1,9 +1,57 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { authAPI, tokenUtils, userUtils, User } from "../lib/auth";
 import toast from "react-hot-toast";
-import { preloadBalanceAfterLogin } from '@/lib/balance-preloader';
+import { generateMockUser, createMockResponse, simulateDelay, MockUser } from "../lib/mock-data";
+
+// Re-export User type for compatibility
+export type User = MockUser;
+
+// Mock token and user utilities
+const tokenUtils = {
+  setToken: (token: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dotpay_token', token);
+    }
+  },
+  getToken: (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dotpay_token');
+    }
+    return null;
+  },
+  removeToken: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dotpay_token');
+    }
+  },
+  isTokenValid: (): boolean => {
+    return !!tokenUtils.getToken();
+  },
+};
+
+const userUtils = {
+  setUser: (user: User) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dotpay_user', JSON.stringify(user));
+    }
+  },
+  getUser: (): User | null => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('dotpay_user');
+      return userData ? JSON.parse(userData) : null;
+    }
+    return null;
+  },
+  removeUser: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dotpay_user');
+    }
+  },
+  isAuthenticated: (): boolean => {
+    return tokenUtils.isTokenValid() && userUtils.getUser() !== null;
+  },
+};
 
 // Types
 export interface AuthContextType {
@@ -114,17 +162,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (data: any) => {
     try {
       setLoading(true);
-      // Use registerInitiate for the first step to maintain compatibility
-      const response = await authAPI.registerInitiate(data);
+      await simulateDelay(800);
       
-      if (response.success) {
-        toast.success(response.message);
-      }
+      const response = createMockResponse(
+        { registrationId: `reg_${Date.now()}`, verificationMethod: data.verifyWith || 'email' },
+        'Registration initiated successfully. Please verify your email or phone.'
+      );
       
+      toast.success(response.message);
       return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
-      toast.error(message);
+      toast.error('Registration failed');
       throw error;
     } finally {
       setLoading(false);
@@ -135,16 +183,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const verifyEmail = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.verifyEmail(data);
+      await simulateDelay(800);
       
-      if (response.success && response.data.token) {
-        return handleAuthSuccess(response);
-      }
+      const mockUser = generateMockUser(data.email);
+      const response = createMockResponse({
+        token: mockUser.token,
+        email: mockUser.email,
+        arbitrumWallet: mockUser.arbitrumWallet,
+        celoWallet: mockUser.celoWallet,
+        walletAddress: mockUser.walletAddress,
+        user: mockUser,
+      }, 'Email verified successfully');
       
-      return response;
+      return handleAuthSuccess(response);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Email verification failed';
-      toast.error(message);
+      toast.error('Email verification failed');
       throw error;
     } finally {
       setLoading(false);
@@ -155,16 +208,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const verifyPhone = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.verifyPhone(data);
+      await simulateDelay(800);
       
-      if (response.success && response.data.token) {
-        return handleAuthSuccess(response);
-      }
+      const mockUser = generateMockUser(undefined, data.phoneNumber);
+      const response = createMockResponse({
+        token: mockUser.token,
+        phoneNumber: mockUser.phoneNumber,
+        arbitrumWallet: mockUser.arbitrumWallet,
+        celoWallet: mockUser.celoWallet,
+        walletAddress: mockUser.walletAddress,
+        user: mockUser,
+      }, 'Phone verified successfully');
       
-      return response;
+      return handleAuthSuccess(response);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Phone verification failed';
-      toast.error(message);
+      toast.error('Phone verification failed');
       throw error;
     } finally {
       setLoading(false);
@@ -175,16 +233,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.login(data);
+      await simulateDelay(800);
       
-      if (response.success) {
-        toast.success(response.message);
-      }
+      const response = createMockResponse(
+        { verificationMethod: data.email ? 'email' : 'phone' },
+        'OTP sent successfully. Please check your email or phone.'
+      );
       
+      toast.success(response.message);
       return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      toast.error(message);
+      toast.error('Login failed');
       throw error;
     } finally {
       setLoading(false);
@@ -195,28 +254,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const verifyLogin = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.verifyLogin(data);
+      await simulateDelay(800);
       
-      console.log("Full OTP verification response:", response);
+      const mockUser = generateMockUser(data.email, data.phoneNumber);
+      const response = createMockResponse({
+        token: mockUser.token,
+        email: mockUser.email,
+        phoneNumber: mockUser.phoneNumber,
+        arbitrumWallet: mockUser.arbitrumWallet,
+        celoWallet: mockUser.celoWallet,
+        walletAddress: mockUser.walletAddress,
+        user: mockUser,
+      }, 'Login successful');
       
-      // Check multiple possible response structures for token
-      const token = (response as any)?.data?.token || 
-                   (response as any)?.token || 
-                   (response as any)?.data?.data?.token ||
-                   (response as any)?.data?.accessToken ||
-                   (response as any)?.accessToken;
-      
-      if ((response as any).success && token) {
-        return handleAuthSuccess(response);
-      } else {
-        console.error("No token found in response. Response structure:", response);
-        throw new Error("Authentication failed - no token received");
-      }
-      
-      return response;
+      return handleAuthSuccess(response);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login verification failed';
-      toast.error(message);
+      toast.error('Login verification failed');
       throw error;
     } finally {
       setLoading(false);
@@ -227,16 +280,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const requestPasswordReset = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.requestPasswordReset(data);
+      await simulateDelay(800);
       
-      if (response.success) {
-        toast.success(response.message);
-      }
+      const response = createMockResponse(
+        {},
+        'Password reset OTP sent to your email'
+      );
       
+      toast.success(response.message);
       return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Password reset request failed';
-      toast.error(message);
+      toast.error('Password reset request failed');
       throw error;
     } finally {
       setLoading(false);
@@ -247,16 +301,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const resetPassword = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.resetPassword(data);
+      await simulateDelay(800);
       
-      if (response.success) {
-        toast.success(response.message);
-      }
+      const response = createMockResponse(
+        {},
+        'Password reset successfully'
+      );
       
+      toast.success(response.message);
       return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Password reset failed';
-      toast.error(message);
+      toast.error('Password reset failed');
       throw error;
     } finally {
       setLoading(false);
@@ -267,16 +322,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const googleAuth = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.googleAuth(data);
+      await simulateDelay(1000);
       
-      if (response.success && response.data.token) {
-        return handleAuthSuccess(response);
-      }
+      const mockUser = generateMockUser('google@example.com');
+      mockUser.googleId = 'google_' + Date.now();
+      const response = createMockResponse({
+        token: mockUser.token,
+        email: mockUser.email,
+        arbitrumWallet: mockUser.arbitrumWallet,
+        celoWallet: mockUser.celoWallet,
+        walletAddress: mockUser.walletAddress,
+        user: mockUser,
+      }, 'Google authentication successful');
       
-      return response;
+      return handleAuthSuccess(response);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Google authentication failed';
-      toast.error(message);
+      toast.error('Google authentication failed');
       throw error;
     } finally {
       setLoading(false);
@@ -287,16 +348,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const linkGoogle = async (data: any) => {
     try {
       setLoading(true);
-      const response = await authAPI.linkGoogle(data);
+      await simulateDelay(800);
       
-      if (response.success) {
-        toast.success(response.message);
-      }
+      const response = createMockResponse(
+        {},
+        'Google account linked successfully'
+      );
       
+      toast.success(response.message);
       return response;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to link Google account';
-      toast.error(message);
+      toast.error('Failed to link Google account');
       throw error;
     } finally {
       setLoading(false);
@@ -306,11 +368,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Get Google config
   const getGoogleConfig = async () => {
     try {
-      const response = await authAPI.getGoogleConfig();
-      return response;
+      await simulateDelay(300);
+      return createMockResponse({
+        clientId: 'mock-google-client-id',
+        redirectUri: typeof window !== 'undefined' ? window.location.origin + '/login' : '',
+      }, 'Google config loaded');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to get Google configuration';
-      toast.error(message);
+      toast.error('Failed to get Google configuration');
       throw error;
     }
   };
@@ -345,11 +409,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Logout
   const logout = async () => {
     try {
-      // Call logout endpoint to invalidate token on server
-      await authAPI.logout();
+      await simulateDelay(300);
     } catch (error) {
-      // Continue with local logout even if server call fails
-      console.error('Server logout failed:', error);
+      // Continue with local logout
+      console.error('Logout error:', error);
     } finally {
       tokenUtils.removeToken();
       userUtils.removeUser();

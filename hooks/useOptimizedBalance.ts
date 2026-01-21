@@ -53,7 +53,7 @@ export const useOptimizedBalance = () => {
   // Get cached balance from localStorage
   const getCachedBalance = useCallback((): WalletBalanceData | null => {
     try {
-      const cached = localStorage.getItem('nexuspay_balance_cache');
+      const cached = localStorage.getItem('dotpay_balance_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         const cacheTime = parsed.timestamp;
@@ -74,7 +74,7 @@ export const useOptimizedBalance = () => {
         data,
         timestamp: Date.now()
       };
-      localStorage.setItem('nexuspay_balance_cache', JSON.stringify(cacheData));
+      localStorage.setItem('dotpay_balance_cache', JSON.stringify(cacheData));
     } catch (error) {
       console.error('Error caching balance:', error);
     }
@@ -152,7 +152,7 @@ export const useOptimizedBalance = () => {
     }
 
     // Check cache for chain-specific balance
-    const cacheKey = `nexuspay_chain_balance_${chain}`;
+    const cacheKey = `dotpay_chain_balance_${chain}`;
     if (!forceRefresh) {
       try {
         const cached = localStorage.getItem(cacheKey);
@@ -305,11 +305,11 @@ export const useOptimizedBalance = () => {
 
   // Clear cache function
   const clearCache = useCallback(() => {
-    localStorage.removeItem('nexuspay_balance_cache');
+    localStorage.removeItem('dotpay_balance_cache');
     // Clear all chain-specific caches
     const chains = ['arbitrum', 'base', 'celo', 'polygon', 'optimism', 'avalanche', 'bnb', 'scroll', 'gnosis'];
     chains.forEach(chain => {
-      localStorage.removeItem(`nexuspay_chain_balance_${chain}`);
+      localStorage.removeItem(`dotpay_chain_balance_${chain}`);
     });
     lastFetchTime.current = 0;
   }, []);

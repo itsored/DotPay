@@ -1,146 +1,47 @@
-import apiClient from './api';
+/**
+ * Business PIN API - STUBBED OUT
+ * This file has been stubbed out for dummy frontend mode.
+ * All business PIN functions return mock data.
+ */
 
-// Types for Business PIN API
-export interface BusinessPinSetData {
-  merchantId: string;
-  phoneNumber: string;
-  otp: string;
-  pin: string;
-}
+import { createMockResponse, simulateDelay } from './mock-data';
 
-export interface BusinessPinSetPublicData {
-  merchantId?: string;
-  phoneNumber?: string;
-  otp: string;
-  pin: string;
-}
+export type BusinessPinSetData = { merchantId: string; phoneNumber: string; otp: string; pin: string };
+export type BusinessPinSetPublicData = { merchantId?: string; phoneNumber?: string; otp: string; pin: string };
+export type BusinessPinRequestOtpData = { merchantId: string; phoneNumber: string };
+export type BusinessPinUpdateData = { businessId: string; oldPin: string; newPin: string };
+export type BusinessPinVerifyData = { businessId: string; pin: string };
+export type BusinessPinVerifyTransactionData = { businessId: string; pin: string; transactionType: string; amount?: number };
+export type BusinessPinForgotRequestData = { merchantId?: string; phoneNumber?: string };
+export type BusinessPinForgotConfirmData = { merchantId?: string; phoneNumber?: string; otp: string; newPin: string };
 
-export interface BusinessPinRequestOtpData {
-  merchantId: string;
-  phoneNumber: string;
-}
-
-export interface BusinessPinUpdateData {
-  businessId: string;
-  oldPin: string;
-  newPin: string;
-}
-
-export interface BusinessPinVerifyData {
-  businessId: string;
-  pin: string;
-}
-
-export interface BusinessPinVerifyTransactionData {
-  businessId: string;
-  pin: string;
-  transactionType: string;
-  amount?: number;
-}
-
-export interface BusinessPinForgotRequestData {
-  merchantId?: string;
-  phoneNumber?: string;
-}
-
-export interface BusinessPinForgotConfirmData {
-  merchantId?: string;
-  phoneNumber?: string;
-  otp: string;
-  newPin: string;
-}
-
-export interface BusinessPinVerifyResponse {
-  verified: boolean;
-  verifiedAt: string;
-  expiresAt: string;
-  businessId: string;
-  businessName: string;
-  merchantId: string;
-}
-
-export interface BusinessPinTransactionGuard {
-  id: string;
-  expiresIn: string;
-}
-
-export interface BusinessPinForgotRequestResponse {
-  phoneNumber: string;
-  otpExpiry: string;
-}
-
-export interface BusinessResponse<T = any> {
-  success: boolean;
-  message: string;
-  data: T;
-  error: any;
-  timestamp: string;
-}
-
-// Business PIN API functions
 export const businessPinAPI = {
-  // Public endpoints (no auth required)
-  
-  // Request OTP for PIN setup
-  requestOtp: async (data: BusinessPinRequestOtpData): Promise<BusinessResponse<BusinessPinForgotRequestResponse>> => {
-    console.log('[business-pin] Requesting OTP with data:', data);
-    const response = await apiClient.post('/business/pin/request-otp', data);
-    console.log('[business-pin] OTP request response:', response.data);
-    return response.data;
+  setPin: async (data: BusinessPinSetData): Promise<any> => {
+    await simulateDelay(800);
+    return createMockResponse({}, 'PIN set successfully');
   },
-
-  // Set PIN with OTP (public)
-  setPinPublic: async (data: BusinessPinSetPublicData): Promise<BusinessResponse> => {
-    const response = await apiClient.post('/business/pin/set-public', data);
-    return response.data;
+  requestOtp: async (data: BusinessPinRequestOtpData): Promise<any> => {
+    await simulateDelay(500);
+    return createMockResponse({}, 'OTP sent');
   },
-
-  // Forgot PIN - Request OTP
-  forgotPinRequest: async (data: BusinessPinForgotRequestData): Promise<BusinessResponse<BusinessPinForgotRequestResponse>> => {
-    const response = await apiClient.post('/business/pin/forgot', data);
-    return response.data;
+  updatePin: async (data: BusinessPinUpdateData): Promise<any> => {
+    await simulateDelay(800);
+    return createMockResponse({}, 'PIN updated');
   },
-
-  // Forgot PIN - Confirm with OTP
-  forgotPinConfirm: async (data: BusinessPinForgotConfirmData): Promise<BusinessResponse> => {
-    const response = await apiClient.post('/business/pin/confirm-forgot', data);
-    return response.data;
+  verifyPin: async (data: BusinessPinVerifyData): Promise<any> => {
+    await simulateDelay(500);
+    return createMockResponse({ verified: true, verifiedAt: new Date().toISOString() }, 'PIN verified');
   },
-
-  // Authenticated endpoints (require Bearer token)
-  
-  // Set PIN with OTP verification
-  setPin: async (data: BusinessPinSetData): Promise<BusinessResponse> => {
-    console.log('[business-pin] Making setPin request with data:', data);
-    console.log('[business-pin] Request URL: /business/pin/set');
-    
-    try {
-      const response = await apiClient.post('/business/pin/set', data);
-      console.log('[business-pin] setPin response:', response.data);
-      return response.data;
-    } catch (error: any) {
-      console.error('[business-pin] setPin error:', error);
-      console.error('[business-pin] setPin error response:', error?.response?.data);
-      console.error('[business-pin] setPin request config:', error?.config);
-      throw error;
-    }
+  verifyTransactionPin: async (data: BusinessPinVerifyTransactionData): Promise<any> => {
+    await simulateDelay(500);
+    return createMockResponse({ verified: true }, 'Transaction PIN verified');
   },
-
-  // Update PIN (requires old PIN)
-  updatePin: async (data: BusinessPinUpdateData): Promise<BusinessResponse> => {
-    const response = await apiClient.post('/business/pin/update', data);
-    return response.data;
+  forgotPinRequest: async (data: BusinessPinForgotRequestData): Promise<any> => {
+    await simulateDelay(500);
+    return createMockResponse({}, 'OTP sent for PIN reset');
   },
-
-  // Verify PIN for session
-  verifyPin: async (data: BusinessPinVerifyData): Promise<BusinessResponse<BusinessPinVerifyResponse>> => {
-    const response = await apiClient.post('/business/pin/verify', data);
-    return response.data;
-  },
-
-  // Verify PIN for specific transaction
-  verifyTransactionPin: async (data: BusinessPinVerifyTransactionData): Promise<BusinessResponse<{ transactionGuard: BusinessPinTransactionGuard }>> => {
-    const response = await apiClient.post('/business/pin/verify-transaction', data);
-    return response.data;
+  forgotPinConfirm: async (data: BusinessPinForgotConfirmData): Promise<any> => {
+    await simulateDelay(800);
+    return createMockResponse({}, 'PIN reset successful');
   },
 };

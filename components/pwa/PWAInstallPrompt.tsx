@@ -178,7 +178,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismis
               {getDeviceIcon()}
               <div>
                 <DialogTitle className="text-lg font-bold text-[#0795B0]">
-                  Install NexusPay
+                  Install DotPay
                 </DialogTitle>
                 <DialogDescription className="text-gray-600">
                   Your secure stablecoin wallet
@@ -198,7 +198,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismis
         
         <div className="space-y-4">
           <div className="bg-[#0795B0]/10 p-4 rounded-lg">
-            <h3 className="font-semibold text-[#0795B0] mb-2">Why install NexusPay?</h3>
+            <h3 className="font-semibold text-[#0795B0] mb-2">Why install DotPay?</h3>
             <ul className="text-sm text-gray-700 space-y-1">
               <li>• Lightning-fast stablecoin transactions</li>
               <li>• Secure offline wallet access</li>
@@ -232,7 +232,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismis
           )}
 
           <p className="text-xs text-gray-500 text-center">
-            Install NexusPay on your {deviceType} for the best stablecoin experience
+            Install DotPay on your {deviceType} for the best stablecoin experience
           </p>
         </div>
       </DialogContent>

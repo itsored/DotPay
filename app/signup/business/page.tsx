@@ -56,7 +56,7 @@ const SignupBusiness = () => {
   const buildAuthHeader = () => {
     try {
       const ctxToken = (user as any)?.token as string | undefined;
-      const raw = ctxToken || localStorage.getItem('nexuspay_token') || localStorage.getItem('user') || localStorage.getItem('nexuspay_user');
+      const raw = ctxToken || localStorage.getItem('dotpay_token') || localStorage.getItem('user') || localStorage.getItem('dotpay_user');
       if (!raw) return undefined;
       let token = raw as string;
       if (token.startsWith('{')) {
@@ -488,10 +488,10 @@ const SignupBusiness = () => {
       />
       <article>
         <h2 className="text-4xl text-white font-bold">
-          Sign Up to NexusPay For Business
+          Sign Up to DotPay For Business
         </h2>
         <h4 className="text-white my-5">
-          Enter your Details to Sign Up to NexusPay
+          Enter your Details to Sign Up to DotPay
         </h4>
         
         {/* SignUp using Formik */}

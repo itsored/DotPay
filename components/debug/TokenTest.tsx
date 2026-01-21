@@ -15,7 +15,7 @@ const TokenTest: React.FC = () => {
   const testWithCurrentToken = async () => {
     setLoading(true);
     try {
-      const currentToken = localStorage.getItem('nexuspay_token');
+      const currentToken = localStorage.getItem('dotpay_token');
       console.log('Testing with current token:', currentToken);
       
       const response = await walletAPI.getBalance();
@@ -34,8 +34,8 @@ const TokenTest: React.FC = () => {
     setLoading(true);
     try {
       // Temporarily set the working token
-      const originalToken = localStorage.getItem('nexuspay_token');
-      localStorage.setItem('nexuspay_token', workingToken);
+      const originalToken = localStorage.getItem('dotpay_token');
+      localStorage.setItem('dotpay_token', workingToken);
       
       console.log('Testing with working token:', workingToken);
       
@@ -45,7 +45,7 @@ const TokenTest: React.FC = () => {
       
       // Restore original token
       if (originalToken) {
-        localStorage.setItem('nexuspay_token', originalToken);
+        localStorage.setItem('dotpay_token', originalToken);
       }
     } catch (error: any) {
       console.error('API call failed:', error);
@@ -65,8 +65,8 @@ const TokenTest: React.FC = () => {
     setLoading(true);
     try {
       // Temporarily set the custom token
-      const originalToken = localStorage.getItem('nexuspay_token');
-      localStorage.setItem('nexuspay_token', testToken);
+      const originalToken = localStorage.getItem('dotpay_token');
+      localStorage.setItem('dotpay_token', testToken);
       
       console.log('Testing with custom token:', testToken);
       
@@ -76,7 +76,7 @@ const TokenTest: React.FC = () => {
       
       // Restore original token
       if (originalToken) {
-        localStorage.setItem('nexuspay_token', originalToken);
+        localStorage.setItem('dotpay_token', originalToken);
       }
     } catch (error: any) {
       console.error('API call failed:', error);
@@ -88,7 +88,7 @@ const TokenTest: React.FC = () => {
   };
 
   const getCurrentTokenInfo = () => {
-    const currentToken = localStorage.getItem('nexuspay_token');
+    const currentToken = localStorage.getItem('dotpay_token');
     if (!currentToken) return null;
 
     try {

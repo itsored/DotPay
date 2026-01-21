@@ -169,7 +169,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Register for NexusPay</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Register for DotPay</h2>
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>

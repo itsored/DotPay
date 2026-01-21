@@ -98,7 +98,7 @@ const ForgotPassword: React.FC = () => {
       } else if (errorCode === 'USER_NOT_FOUND') {
         setErrorMessage("No account found with this phone number. Please check your number or create an account.");
       } else if (errorCode === 'OTP_SEND_FAILED') {
-        setErrorMessage("Failed to send OTP. Please try again or contact support at support@nexuspaydefi.xyz");
+        setErrorMessage("Failed to send OTP. Please try again or contact support at support@dotpay.xyz");
       } else if (error?.response?.status === 400) {
         // Use the exact error message from the API
         if (errorMessage) {
@@ -212,7 +212,7 @@ const ForgotPassword: React.FC = () => {
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-blue-800 mb-2">Alternative Solutions:</h4>
                   <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Contact support at support@nexuspaydefi.xyz</li>
+                    <li>• Contact support at support@dotpay.xyz</li>
                     <li>• Create a new account with a different phone number</li>
                     <li>• Try again later when the service is restored</li>
                   </ul>
@@ -230,7 +230,7 @@ const ForgotPassword: React.FC = () => {
                   <Button
                     onClick={() => {
                       setOpenAccErr(false);
-                      window.location.href = 'mailto:support@nexuspaydefi.xyz?subject=Password Reset Help';
+                      window.location.href = 'mailto:support@dotpay.xyz?subject=Password Reset Help';
                     }}
                     variant="outline"
                     className="flex-1"

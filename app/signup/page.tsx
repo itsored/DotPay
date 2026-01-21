@@ -232,9 +232,9 @@ const Signup = () => {
         setOpenError={setOpenAccErr}
       />
       <article>
-        <h2 className="text-4xl text-white font-bold">Sign Up to NexusPay</h2>
+        <h2 className="text-4xl text-white font-bold">Sign Up to DotPay</h2>
         <h4 className="text-white my-5">
-          Enter your Details to Sign Up to NexusPay
+          Enter your Details to Sign Up to DotPay
         </h4>
         {/* SignUp using Formik */}
         <Formik

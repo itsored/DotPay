@@ -1,149 +1,67 @@
-import apiClient from './api';
+/**
+ * Wallet API - STUBBED OUT
+ * This file has been stubbed out for dummy frontend mode.
+ * All wallet functions return mock data.
+ */
 
-// Types
-export interface SupportedChain {
-  name: string;
-  id: string;
-  chainId: number;
-}
+import { generateMockWallet, generateMockBalance, createMockResponse, simulateDelay, MockWalletDetails, MockBalanceData } from './mock-data';
 
-export interface ReceiveData {
-  walletAddress: string;
-  phoneNumber: string;
-  email: string;
-  supportedChains: SupportedChain[];
-  note: string;
-}
+// Re-export types
+export type WalletDetails = MockWalletDetails;
+export type BalanceData = MockBalanceData;
+export type SupportedChain = { name: string; id: string; chainId: number };
+export type ReceiveData = { walletAddress: string; phoneNumber: string; email: string; supportedChains: SupportedChain[]; note: string };
+export type SendTokenData = { to: string; amount: string; token: string; chain: string };
+export type PayMerchantData = { merchantId: string; amount: string; token: string; chain: string; description?: string };
+export type TransferEvent = { id: string; from: string; to: string; amount: string; token: string; chain: string; txHash: string; timestamp: string; status: 'pending' | 'confirmed' | 'failed'; type: 'send' | 'receive' | 'payment' };
+export type UnifyWalletData = { sourceChain: string; targetChain: string; tokens: string[] };
+export type MigrateWalletData = { fromChain: string; toChain: string; tokens: string[] };
+export type ApiResponse<T = any> = { success: boolean; message: string; data: T; timestamp?: string };
 
-export interface ChainBalances {
-  [token: string]: number;
-}
-
-export interface BalanceData {
-  walletAddress: string;
-  totalUSDValue: number;
-  balances: {
-    [chain: string]: ChainBalances;
-  };
-  chainsWithBalance: number;
-  lastUpdated: string;
-}
-
-// Legacy types for backward compatibility
-export interface WalletBalance {
-  token: string;
-  balance: string;
-  usdValue: string;
-  chain: string;
-}
-
-export interface WalletDetails {
-  walletAddress: string;
-  phoneNumber: string;
-  email: string;
-  supportedChains: SupportedChain[];
-  note: string;
-  // Legacy fields for compatibility
-  address?: string;
-  totalUsdValue?: string;
-  chains?: string[];
-  balances?: WalletBalance[];
-}
-
-export interface SendTokenData {
-  to: string;
-  amount: string;
-  token: string;
-  chain: string;
-}
-
-export interface PayMerchantData {
-  merchantId: string;
-  amount: string;
-  token: string;
-  chain: string;
-  description?: string;
-}
-
-export interface TransferEvent {
-  id: string;
-  from: string;
-  to: string;
-  amount: string;
-  token: string;
-  chain: string;
-  txHash: string;
-  timestamp: string;
-  status: 'pending' | 'confirmed' | 'failed';
-  type: 'send' | 'receive' | 'payment';
-}
-
-export interface UnifyWalletData {
-  sourceChain: string;
-  targetChain: string;
-  tokens: string[];
-}
-
-export interface MigrateWalletData {
-  fromChain: string;
-  toChain: string;
-  tokens: string[];
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data: T;
-  timestamp?: string;
-}
-
-// Core Wallet Operations
 export const walletAPI = {
-  // Get receive information (wallet address, supported chains, etc.)
   getReceiveInfo: async (): Promise<ApiResponse<ReceiveData>> => {
-    const response = await apiClient.get('/token/receive');
-    return response.data;
+    await simulateDelay(500);
+    const wallet = generateMockWallet();
+    return createMockResponse({
+      walletAddress: wallet.walletAddress,
+      phoneNumber: wallet.phoneNumber,
+      email: wallet.email,
+      supportedChains: wallet.supportedChains,
+      note: wallet.note,
+    });
   },
-
-  // Get wallet balance information
   getBalance: async (): Promise<ApiResponse<BalanceData>> => {
-    const response = await apiClient.get('/token/balance');
-    return response.data;
+    await simulateDelay(500);
+    return createMockResponse(generateMockBalance());
   },
-
-  // Legacy method for backward compatibility
   getWallet: async (): Promise<ApiResponse<WalletDetails>> => {
-    const response = await apiClient.get('/token/receive');
-    return response.data;
+    await simulateDelay(500);
+    return createMockResponse(generateMockWallet());
   },
-
-  // Send crypto to another wallet
   sendToken: async (data: SendTokenData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/token/sendToken', data);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({
+      txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      status: 'pending',
+    }, 'Token sent successfully');
   },
-
-  // Pay merchant with crypto
   payMerchant: async (data: PayMerchantData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/token/pay', data);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({
+      txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
+      status: 'pending',
+    }, 'Payment sent successfully');
   },
-
-  // Get transfer history
   getTransferEvents: async (): Promise<ApiResponse<TransferEvent[]>> => {
-    const response = await apiClient.get('/token/tokenTransferEvents');
-    return response.data;
+    await simulateDelay(500);
+    return createMockResponse([]);
   },
-
-  // Unify wallet accounts across chains
   unifyWallet: async (data: UnifyWalletData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/token/unify', data);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({}, 'Wallet unified');
   },
-
-  // Migrate wallet to different chain
   migrateWallet: async (data: MigrateWalletData): Promise<ApiResponse> => {
-    const response = await apiClient.post('/token/migrate', data);
-    return response.data;
+    await simulateDelay(1000);
+    return createMockResponse({}, 'Wallet migrated');
   },
 };

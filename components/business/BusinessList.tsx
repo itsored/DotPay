@@ -85,7 +85,7 @@ export const BusinessList: React.FC<BusinessListProps> = ({
       const response = await fetch('http://localhost:8000/api/business/my-businesses', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')?.replace(/"/g, '')}`,
+          'Authorization': `Bearer ${localStorage.getItem('dotpay_token')?.replace(/"/g, '')}`,
           'Content-Type': 'application/json'
         }
       });

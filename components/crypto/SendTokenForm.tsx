@@ -98,8 +98,8 @@ export const SendTokenForm: React.FC = () => {
       googleAuthCode: authMethod === 'googleAuth' ? '***HIDDEN***' : undefined,
     });
     console.log('🔐 Auth method:', authMethod);
-    console.log('🎫 Current token:', localStorage.getItem('nexuspay_token') ? 'Present' : 'Missing');
-    console.log('👤 Current user:', localStorage.getItem('nexuspay_user') ? 'Present' : 'Missing');
+    console.log('🎫 Current token:', localStorage.getItem('dotpay_token') ? 'Present' : 'Missing');
+    console.log('👤 Current user:', localStorage.getItem('dotpay_user') ? 'Present' : 'Missing');
 
     try {
       const response = await sendToken(requestData);
@@ -172,8 +172,8 @@ export const SendTokenForm: React.FC = () => {
         displayMessage = 'Authentication failed. Please check your password or Google Authenticator code and ensure you are logged in.';
         
         // Check if user is still authenticated
-        const token = localStorage.getItem('nexuspay_token');
-        const user = localStorage.getItem('nexuspay_user');
+        const token = localStorage.getItem('dotpay_token');
+        const user = localStorage.getItem('dotpay_user');
         if (!token || !user) {
           displayMessage += ' Your session may have expired. Please login again.';
         }

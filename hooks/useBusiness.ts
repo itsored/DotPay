@@ -62,9 +62,9 @@ export const useBusiness = () => {
   const getBusinessDetails = useCallback(async () => {
     return businessDetailsApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/details`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/details`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -80,9 +80,9 @@ export const useBusiness = () => {
   const getBusinessStatus = useCallback(async () => {
     return businessStatusApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/status`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/status`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -105,10 +105,10 @@ export const useBusiness = () => {
   }) => {
     return businessCreateApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/request-upgrade`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/request-upgrade`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
@@ -134,10 +134,10 @@ export const useBusiness = () => {
   }) => {
     return businessCompleteApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/complete-upgrade`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/complete-upgrade`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
@@ -155,10 +155,10 @@ export const useBusiness = () => {
   const requestOverdraft = useCallback(async (data: OverdraftRequest) => {
     return overdraftRequestApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/overdraft/request`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/overdraft/request`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
@@ -176,10 +176,10 @@ export const useBusiness = () => {
   const repayOverdraft = useCallback(async (data: OverdraftRepayment) => {
     return overdraftRepayApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/overdraft/repay`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/overdraft/repay`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
@@ -197,9 +197,9 @@ export const useBusiness = () => {
   const getCreditAssessment = useCallback(async (businessId: string) => {
     return overdraftAssessmentApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/overdraft/assessment/${businessId}`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/overdraft/assessment/${businessId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -215,10 +215,10 @@ export const useBusiness = () => {
   const toggleOverdraft = useCallback(async (data: { businessId: string; enabled: boolean }) => {
     return overdraftToggleApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/overdraft/toggle`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/overdraft/toggle`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(data),
@@ -236,9 +236,9 @@ export const useBusiness = () => {
   const getOverdraftHistory = useCallback(async (businessId: string) => {
     return overdraftHistoryApi.execute(
       async () => {
-        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.nexuspaydefi.xyz' : 'http://localhost:8000'}/api/business/overdraft/history/${businessId}`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'https://api.dotpay.xyz' : 'http://localhost:8000'}/api/business/overdraft/history/${businessId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('nexuspay_token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('dotpay_token')}`,
             'Content-Type': 'application/json',
           },
         });
