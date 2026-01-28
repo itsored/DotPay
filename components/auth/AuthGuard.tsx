@@ -1,28 +1,27 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useAuthSession } from "@/context/AuthSessionContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
   redirectTo?: string;
 }
 
-const AuthGuard: React.FC<AuthGuardProps> = ({ 
-  children, 
-  redirectTo = "/login" 
+const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
+  redirectTo = "/login",
 }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isLoggedIn, loading } = useAuthSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isLoggedIn) {
       router.replace(redirectTo);
     }
-  }, [isAuthenticated, loading, router, redirectTo]);
+  }, [isLoggedIn, loading, router, redirectTo]);
 
-  // Show loading while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -31,8 +30,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     );
   }
 
-  // Don't render children if not authenticated
-  if (!isAuthenticated || !user) {
+  if (!isLoggedIn) {
     return null;
   }
 

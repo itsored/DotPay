@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuthSession } from "./AuthSessionContext";
 import toast from "react-hot-toast";
 import {
   generateMockWallet,
@@ -91,7 +91,7 @@ const WalletContext = createContext<WalletContextType | null>(null);
 
 // Provider component
 export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const [wallet, setWallet] = useState<WalletDetails | null>(null);
   const [balance, setBalance] = useState<BalanceData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -110,7 +110,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Refresh Stellar wallet data
   const refreshStellarWallet = async () => {
-    if (!isAuthenticated || !user) return;
+    if (!isLoggedIn) return;
     
     try {
       await simulateDelay(500);
@@ -127,29 +127,27 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize wallet data when authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isLoggedIn) {
       console.log('User authenticated, attempting to refresh wallets');
-      console.log('User token:', user.token);
-      console.log('Token in localStorage:', localStorage.getItem('dotpay_token'));
       refreshWallet();
       refreshStellarWallet();
     } else {
       setWallet(null);
       setStellarWallet(null);
-      console.log('User not authenticated or no user data');
+      console.log('User not authenticated');
     }
-  }, [isAuthenticated, user]);
+  }, [isLoggedIn]);
 
   // Refresh wallet data
   const refreshWallet = async () => {
-    if (!isAuthenticated || !user) return;
+    if (!isLoggedIn) return;
     
     try {
       setRefreshing(true);
       await simulateDelay(600);
       
-      const mockWallet = generateMockWallet(user);
-      const mockBalance = generateMockBalance(user.walletAddress);
+      const mockWallet = generateMockWallet();
+      const mockBalance = generateMockBalance("mock-address");
       
       setWallet(mockWallet);
       setBalance(mockBalance);
@@ -163,7 +161,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize wallet for new users (especially Google users)
   const initializeWallet = async () => {
-    if (!isAuthenticated || !user) {
+    if (!isLoggedIn) {
       throw new Error('User must be authenticated to initialize wallet');
     }
     
@@ -171,8 +169,8 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       await simulateDelay(800);
       
-      const mockWallet = generateMockWallet(user);
-      const mockBalance = generateMockBalance(user.walletAddress);
+      const mockWallet = generateMockWallet();
+      const mockBalance = generateMockBalance("mock-address");
       
       setWallet(mockWallet);
       setBalance(mockBalance);
@@ -188,7 +186,7 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Initialize Stellar wallet for new users
   const initializeStellarWallet = async () => {
-    if (!isAuthenticated || !user) {
+    if (!isLoggedIn) {
       throw new Error('User must be authenticated to initialize Stellar wallet');
     }
     

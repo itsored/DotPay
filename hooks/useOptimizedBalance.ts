@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useAxios from './useAxios';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthSession } from '@/context/AuthSessionContext';
 
 export interface TokenBalance {
   [token: string]: number;
@@ -39,7 +39,7 @@ export const useOptimizedBalance = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const api = useAxios();
-  const { isAuthenticated, user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const queryClient = useQueryClient();
   const lastFetchTime = useRef<number>(0);
   const lastApiCallTime = useRef<number>(0);
@@ -81,72 +81,75 @@ export const useOptimizedBalance = () => {
   }, []);
 
   // Fetch all primary chain balances with caching
-  const fetchAllBalances = useCallback(async (forceRefresh = false) => {
-    if (!isAuthenticated || !user) {
-      setError('User not authenticated');
-      return;
-    }
-
-    // Rate limiting: prevent API calls more than once every 10 seconds
-    const now = Date.now();
-    if (!forceRefresh && (now - lastApiCallTime.current < 10000)) {
-      console.log('Rate limited: API call too frequent');
-      return;
-    }
-
-    // Prevent concurrent API calls
-    if (isFetching.current) {
-      console.log('Already fetching, skipping duplicate call');
-      return;
-    }
-
-    // Check cache first (unless force refresh)
-    if (!forceRefresh && isCacheValid()) {
-      const cachedBalance = getCachedBalance();
-      if (cachedBalance) {
-        setBalance(cachedBalance);
-        setError(null);
+  const fetchAllBalances = useCallback(
+    async (forceRefresh = false) => {
+      if (!isLoggedIn) {
+        setError("User not authenticated");
         return;
       }
-    }
 
-    isFetching.current = true;
-    lastApiCallTime.current = now;
-    setLoading(true);
-    setError(null);
+      // Rate limiting: prevent API calls more than once every 10 seconds
+      const now = Date.now();
+      if (!forceRefresh && now - lastApiCallTime.current < 10000) {
+        console.log("Rate limited: API call too frequent");
+        return;
+      }
 
-    try {
-      const response = await api.get('/token/balance');
-      
-      if (response.data.success) {
-        const balanceData = response.data.data;
-        setBalance(balanceData);
-        setCachedBalance(balanceData);
-        lastFetchTime.current = Date.now();
-        setError(null);
-      } else {
-        setError(response.data.message || 'Failed to fetch balances');
+      // Prevent concurrent API calls
+      if (isFetching.current) {
+        console.log("Already fetching, skipping duplicate call");
+        return;
       }
-    } catch (err: any) {
-      console.error('Error fetching wallet balances:', err);
-      
-      // Try to use cached data on error
-      const cachedBalance = getCachedBalance();
-      if (cachedBalance) {
-        setBalance(cachedBalance);
-        setError('Using cached data - connection issue');
-      } else {
-        setError(err.response?.data?.message || 'Failed to fetch wallet balances');
+
+      // Check cache first (unless force refresh)
+      if (!forceRefresh && isCacheValid()) {
+        const cachedBalance = getCachedBalance();
+        if (cachedBalance) {
+          setBalance(cachedBalance);
+          setError(null);
+          return;
+        }
       }
-    } finally {
-      setLoading(false);
-      isFetching.current = false;
-    }
-  }, [isAuthenticated, user, api, isCacheValid, getCachedBalance, setCachedBalance]);
+
+      isFetching.current = true;
+      lastApiCallTime.current = now;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await api.get("/token/balance");
+
+        if (response.data.success) {
+          const balanceData = response.data.data;
+          setBalance(balanceData);
+          setCachedBalance(balanceData);
+          lastFetchTime.current = Date.now();
+          setError(null);
+        } else {
+          setError(response.data.message || "Failed to fetch balances");
+        }
+      } catch (err: any) {
+        console.error("Error fetching wallet balances:", err);
+
+        // Try to use cached data on error
+        const cachedBalance = getCachedBalance();
+        if (cachedBalance) {
+          setBalance(cachedBalance);
+          setError("Using cached data - connection issue");
+        } else {
+          setError(err.response?.data?.message || "Failed to fetch wallet balances");
+        }
+      } finally {
+        setLoading(false);
+        isFetching.current = false;
+      }
+    },
+    [isLoggedIn, api, isCacheValid, getCachedBalance, setCachedBalance]
+  );
 
   // Fetch balance for specific chain
   const fetchChainBalance = useCallback(async (chain: string, forceRefresh = false) => {
-    if (!isAuthenticated || !user) {
+    if (!isLoggedIn) {
       setError('User not authenticated');
       return;
     }
@@ -200,11 +203,11 @@ export const useOptimizedBalance = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user, api]);
+  }, [isLoggedIn, api]);
 
   // Background refresh function
   const backgroundRefresh = useCallback(async () => {
-    if (!isAuthenticated || !user) return;
+    if (!isLoggedIn) return;
     
     // Rate limiting for background refresh
     const now = Date.now();
@@ -232,11 +235,11 @@ export const useOptimizedBalance = () => {
     } finally {
       isFetching.current = false;
     }
-  }, [isAuthenticated, user, api, setCachedBalance]);
+  }, [isLoggedIn, api, setCachedBalance]);
 
   // Initialize with cached data immediately
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isLoggedIn) {
       const cachedBalance = getCachedBalance();
       if (cachedBalance) {
         setBalance(cachedBalance);
@@ -248,11 +251,11 @@ export const useOptimizedBalance = () => {
         fetchAllBalances();
       }
     }
-  }, [isAuthenticated, user]); // Remove function dependencies to prevent infinite loops
+  }, [isLoggedIn]); // Remove function dependencies to prevent infinite loops
 
   // Set up background refresh interval with visibility detection
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isLoggedIn) return;
 
     let interval: NodeJS.Timeout;
     let visibilityInterval: NodeJS.Timeout;
@@ -301,7 +304,7 @@ export const useOptimizedBalance = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [isAuthenticated]); // Remove backgroundRefresh dependency
+  }, [isLoggedIn]); // Remove backgroundRefresh dependency
 
   // Clear cache function
   const clearCache = useCallback(() => {

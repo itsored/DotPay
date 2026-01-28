@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
 
 const WalletDebug: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
   const { wallet, refreshWallet, loading, refreshing } = useWallet();
 
   const testWalletAPI = async () => {
@@ -22,30 +20,6 @@ const WalletDebug: React.FC = () => {
       <h3 className="text-lg font-bold mb-4">Wallet Debug Info</h3>
       
       <div className="space-y-2 text-sm">
-        <div>
-          <strong>Authenticated:</strong> {isAuthenticated ? "Yes" : "No"}
-        </div>
-        
-        <div>
-          <strong>User Email:</strong> {user?.email || "Not available"}
-        </div>
-        
-        <div>
-          <strong>User Phone:</strong> {user?.phoneNumber || "Not available"}
-        </div>
-        
-        <div>
-          <strong>Arbitrum Wallet:</strong> {user?.arbitrumWallet || "Not available"}
-        </div>
-        
-        <div>
-          <strong>Celo Wallet:</strong> {user?.celoWallet || "Not available"}
-        </div>
-        
-        <div>
-          <strong>Token Available:</strong> {user?.token ? "Yes" : "No"}
-        </div>
-        
         <div>
           <strong>Token in localStorage:</strong> {localStorage.getItem('dotpay_token') ? "Yes" : "No"}
         </div>

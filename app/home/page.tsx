@@ -287,7 +287,7 @@ const Player = dynamic(
   () => import("@lottiefiles/react-lottie-player").then((mod) => mod.Player),
   { ssr: false }
 );
-import { useAuth } from "@/context/AuthContext";
+import { useAuthSession } from "@/context/AuthSessionContext";
 import { useBusiness } from "@/context/BusinessContext";
 import { useOptimizedBalance } from "@/hooks/useOptimizedBalance";
 import { BalanceSkeleton, BalanceErrorState, BalanceEmptyState } from "@/components/ui/balance-skeleton";
@@ -296,7 +296,7 @@ import { cryptoConverter } from "@/lib/crypto-converter";
 import { BusinessList } from "@/components/business/BusinessList";
 
 const Home = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isLoggedIn, logout } = useAuthSession();
   const { 
     currentBusiness, 
     isPinVerified, 
@@ -313,15 +313,13 @@ const Home = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if the user is authenticated using the auth context
-    if (!isAuthenticated) {
-      // If not logged in, redirect to the login page
+    if (!isLoggedIn) {
       router.replace("/login");
+      return;
     }
-    console.log("User:", user);
     console.log("Business accounts:", businessAccounts);
     console.log("Current business:", currentBusiness);
-  }, [router, isAuthenticated, user, businessAccounts, currentBusiness]);
+  }, [router, isLoggedIn, businessAccounts, currentBusiness]);
 
   const handleSend = () => {
     router.replace("/crypto");

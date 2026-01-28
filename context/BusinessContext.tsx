@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuthSession } from './AuthSessionContext';
 import { generateMockBusinessAccounts, createMockResponse, simulateDelay, MockBusinessAccount } from '@/lib/mock-data';
 
 // Re-export type for compatibility
@@ -58,7 +58,7 @@ interface BusinessProviderProps {
 }
 
 export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const [businessAccounts, setBusinessAccounts] = useState<BusinessAccount[]>([]);
   const [currentBusiness, setCurrentBusiness] = useState<BusinessAccount | null>(null);
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(false);
@@ -74,12 +74,12 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
 
   const isPinVerified = pinSession ? checkPinSessionExpiry() : false;
 
-  // Load user's business accounts
+  // Load user's business accounts (mocked, keyed only by auth state)
   const loadBusinessAccounts = async (): Promise<void> => {
-    if (!user?.id && !user?.email && !user?.phoneNumber) {
+    if (!isLoggedIn) {
       return;
     }
-    
+
     setIsLoadingBusinesses(true);
     try {
       await simulateDelay(600);
@@ -222,9 +222,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
 
   // Load business accounts when user changes
   useEffect(() => {
-    const isAuthenticated = user?.id || user?.email || user?.phoneNumber;
-    if (isAuthenticated) {
-      console.log('User authenticated, loading business accounts for:', user.id || user.email || user.phoneNumber);
+    if (isLoggedIn) {
+      console.log('User authenticated, loading business accounts');
       loadBusinessAccounts();
     } else {
       console.log('User not authenticated, clearing business accounts');
@@ -232,16 +231,15 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
       setCurrentBusiness(null);
       setPinSession(null);
     }
-  }, [user?.id, user?.email, user?.phoneNumber]);
+  }, [isLoggedIn]);
 
   // Also load businesses when the component mounts and user is already authenticated
   useEffect(() => {
-    const isAuthenticated = user?.id || user?.email || user?.phoneNumber;
-    if (isAuthenticated && businessAccounts.length === 0 && !isLoadingBusinesses) {
+    if (isLoggedIn && businessAccounts.length === 0 && !isLoadingBusinesses) {
       console.log('Component mounted with authenticated user, loading business accounts');
       loadBusinessAccounts();
     }
-  }, []);
+  }, [isLoggedIn, businessAccounts.length, isLoadingBusinesses]);
 
   // Check PIN session expiry periodically
   useEffect(() => {

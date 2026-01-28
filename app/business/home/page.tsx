@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBusiness } from '@/context/BusinessContext';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthSession } from '@/context/AuthSessionContext';
 import { businessActionsAPI, BusinessDetails, BusinessStatus } from '@/lib/business-actions';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -39,7 +39,7 @@ import {
 export default function BusinessHomePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const {
     currentBusiness,
     switchToPersonal,

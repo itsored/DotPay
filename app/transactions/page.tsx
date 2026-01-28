@@ -6,10 +6,10 @@ import { ArrowLeft } from 'lucide-react';
 import { TransactionHistory } from '../../components/transactions/TransactionHistory';
 import { TransactionAnalytics } from '../../components/transactions/TransactionAnalytics';
 import { TransactionExport } from '../../components/transactions/TransactionExport';
-import { useAuth } from '../../context/AuthContext';
+import { useAuthSession } from '../../context/AuthSessionContext';
 
 const TransactionsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'history' | 'analytics' | 'export'>('history');
   
@@ -19,8 +19,8 @@ const TransactionsPage: React.FC = () => {
     router.push('/home');
   };
   
-  // Check if user has admin privileges (you can adjust this logic based on your user model)
-  const isAdmin = (user as any)?.role === 'admin' || (user as any)?.isAdmin;
+  // Admin-specific analytics are disabled for now without a user profile
+  const isAdmin = false;
   
   const tabs = [
     { id: 'history', label: 'Transaction History', icon: '📋' },

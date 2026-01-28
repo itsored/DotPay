@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Copy } from "@phosphor-icons/react";
 import QRCode from "qrcode.react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuthSession } from "@/context/AuthSessionContext";
 import { useWallet } from "@/context/WalletContext";
 import { useChain } from "@/context/ChainContext";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -12,7 +11,7 @@ import toast from "react-hot-toast";
 
 const Receive: React.FC = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { isLoggedIn } = useAuthSession();
   const { wallet, hasWallet, loading, initializeWallet } = useWallet();
   const { chain } = useChain();
   const [initializing, setInitializing] = useState(false);

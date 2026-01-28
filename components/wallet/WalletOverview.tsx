@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useWallet } from "@/context/WalletContext";
 import { useStellar } from "@/hooks/useStellar";
 import { Copy } from "lucide-react";
@@ -12,7 +11,6 @@ interface WalletOverviewProps {
 }
 
 const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
-  const { isAuthenticated, user } = useAuth();
   const { wallet, balance, loading, refreshing, hasWallet, refreshWallet, initializeWallet, stellarWallet } = useWallet();
   const { balances: stellarBalances } = useStellar();
   const [selectedChain, setSelectedChain] = useState<string>("all");
@@ -92,14 +90,6 @@ const WalletOverview: React.FC<WalletOverviewProps> = ({ className = "" }) => {
   const formatWalletAddress = (address: string) => {
     return address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : 'No wallet address';
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className={`p-6 text-center bg-white rounded-lg border ${className}`}>
-        <p className="text-gray-500">Please log in to view your wallet balance</p>
-      </div>
-    );
-  }
 
   if (loading || refreshing || initializing) {
     return (

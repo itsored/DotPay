@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -26,8 +26,12 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import ProgressBar from '@/components/dashboard/ProgressBar';
 import StatTable from '@/components/dashboard/StatTable';
+import { useAuthSession } from '@/context/AuthSessionContext';
+import { useRouter } from 'next/navigation';
 
 const Dashboard: React.FC = () => {
+  const { isLoggedIn, loading } = useAuthSession();
+  const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState<'24h' | '7d' | '30d'>('7d');
   
   const {
@@ -57,6 +61,12 @@ const Dashboard: React.FC = () => {
   const formatPercentage = (num: number) => {
     return `${num >= 0 ? '+' : ''}${num.toFixed(1)}%`;
   };
+
+  useEffect(() => {
+    if (!loading && !isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [loading, isLoggedIn, router]);
 
   const getGrowthIcon = (rate: number) => {
     if (rate > 0) return <ArrowUp className="h-4 w-4 text-green-500" />;

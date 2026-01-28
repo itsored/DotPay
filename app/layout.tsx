@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "@/styles/style.css";
-import { AuthProvider } from "@/context/AuthContext"; // Ensure this path matches the location of your AuthContext file
 import { BalanceProvider } from "@/context/BalanceContext";
 import { ChainProvider } from "@/context/ChainContext";
 import { WalletProvider } from "@/context/WalletContext";
@@ -13,6 +12,9 @@ import { ReactQueryClientProvider } from "@/providers/ReactQueryClientProvider";
 import { Toaster } from "react-hot-toast";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import PWAUpdateNotification from "@/components/pwa/PWAUpdateNotification";
+import { ThirdwebProvider } from "thirdweb/react";
+import { thirdwebClient } from "@/lib/thirdwebClient";
+import { AuthSessionProvider } from "@/context/AuthSessionContext";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -156,22 +158,24 @@ export default function RootLayout({
           ` }} />
         )}
         <ReactQueryClientProvider>
-          <PWAProvider>
-            <AuthProvider>
-              <BusinessProvider>
-                <WalletProvider>
-                  <ChainProvider>
-                    <BalanceProvider>
-                      <ClientOnly>{children}</ClientOnly>
-                      <PWAInstallPrompt />
-                      <PWAUpdateNotification />
-                      <Toaster />
-                    </BalanceProvider>
-                  </ChainProvider>
-                </WalletProvider>
-              </BusinessProvider>
-            </AuthProvider>
-          </PWAProvider>
+          <ThirdwebProvider client={thirdwebClient}>
+            <AuthSessionProvider>
+              <PWAProvider>
+                <BusinessProvider>
+                  <WalletProvider>
+                    <ChainProvider>
+                      <BalanceProvider>
+                        <ClientOnly>{children}</ClientOnly>
+                        <PWAInstallPrompt />
+                        <PWAUpdateNotification />
+                        <Toaster />
+                      </BalanceProvider>
+                    </ChainProvider>
+                  </WalletProvider>
+                </BusinessProvider>
+              </PWAProvider>
+            </AuthSessionProvider>
+          </ThirdwebProvider>
         </ReactQueryClientProvider>
       </body>
     </html>
