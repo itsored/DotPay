@@ -13,19 +13,19 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   children,
   redirectTo = "/login",
 }) => {
-  const { isLoggedIn, loading } = useAuthSession();
+  const { isLoggedIn, loading, hasChecked } = useAuthSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !isLoggedIn) {
+    if (hasChecked && !isLoggedIn) {
       router.replace(redirectTo);
     }
-  }, [isLoggedIn, loading, router, redirectTo]);
+  }, [isLoggedIn, hasChecked, router, redirectTo]);
 
-  if (loading) {
+  if (!hasChecked || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#0795B0] border-t-transparent"></div>
       </div>
     );
   }

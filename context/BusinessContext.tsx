@@ -95,24 +95,13 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
 
   // Switch to business account
   const switchToBusiness = async (businessId: string): Promise<void> => {
-    console.log('BusinessContext - switching to business:', businessId);
     const business = businessAccounts.find(b => b.businessId === businessId);
     if (!business) {
       console.error('Business account not found for ID:', businessId);
       throw new Error('Business account not found');
     }
     
-    console.log('BusinessContext - setting current business:', business.businessName);
     setCurrentBusiness(business);
-    
-    // Ensure PIN session is linked to the correct business
-    if (pinSession && pinSession.businessId === businessId) {
-      console.log('BusinessContext - PIN session already linked to business');
-    } else {
-      console.log('BusinessContext - PIN session not linked to business, this should not happen after PIN verification');
-    }
-    
-    console.log('BusinessContext - business switch completed');
   };
 
   // Switch to personal account
@@ -223,10 +212,8 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Load business accounts when user changes
   useEffect(() => {
     if (isLoggedIn) {
-      console.log('User authenticated, loading business accounts');
       loadBusinessAccounts();
     } else {
-      console.log('User not authenticated, clearing business accounts');
       setBusinessAccounts([]);
       setCurrentBusiness(null);
       setPinSession(null);
@@ -236,7 +223,6 @@ export const BusinessProvider: React.FC<BusinessProviderProps> = ({ children }) 
   // Also load businesses when the component mounts and user is already authenticated
   useEffect(() => {
     if (isLoggedIn && businessAccounts.length === 0 && !isLoadingBusinesses) {
-      console.log('Component mounted with authenticated user, loading business accounts');
       loadBusinessAccounts();
     }
   }, [isLoggedIn, businessAccounts.length, isLoadingBusinesses]);

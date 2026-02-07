@@ -7,24 +7,16 @@ import { ThirdwebConnectButton } from "@/components/auth/ThirdwebConnectButton";
 import { useAuthSession } from "@/context/AuthSessionContext";
 
 const Signup = () => {
-  const { isLoggedIn, loading } = useAuthSession();
+  const { isLoggedIn, hasChecked } = useAuthSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isLoggedIn) {
-      router.replace("/home");
+    if (hasChecked && isLoggedIn) {
+      router.replace("/onboarding/identity");
     }
-  }, [loading, isLoggedIn, router]);
+  }, [hasChecked, isLoggedIn, router]);
 
-  if (loading) {
-    return (
-      <section className="app-background flex flex-col items-center justify-center px-4">
-        <p className="text-white">Checking session...</p>
-      </section>
-    );
-  }
-
-  if (isLoggedIn) {
+  if (hasChecked && isLoggedIn) {
     return null;
   }
 

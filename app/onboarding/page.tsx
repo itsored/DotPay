@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NexusLogo } from "@/constants/svg";
 import { onboardingSource } from "@/helpers/onboardingSource";
 import {
+  type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -14,72 +16,85 @@ import { ThirdwebConnectButton } from "@/components/auth/ThirdwebConnectButton";
 import { useAuthSession } from "@/context/AuthSessionContext";
 
 const Onboarding = () => {
-  const { isLoggedIn, loading } = useAuthSession();
+  const { isLoggedIn, hasChecked } = useAuthSession();
   const router = useRouter();
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
-    if (!loading && isLoggedIn) {
-      router.replace("/home");
+    if (hasChecked && isLoggedIn) {
+      router.replace("/onboarding/identity");
     }
-  }, [loading, isLoggedIn, router]);
+  }, [hasChecked, isLoggedIn, router]);
 
-  if (loading) {
-    return (
-      <main className="onboarding-bg flex items-center justify-center">
-        <p className="text-white">Checking session...</p>
-      </main>
-    );
-  }
+  useEffect(() => {
+    if (!carouselApi) return;
 
-  if (isLoggedIn) {
+    const onSelect = () => {
+      setActiveSlide(carouselApi.selectedScrollSnap());
+    };
+
+    onSelect();
+    carouselApi.on("select", onSelect);
+    carouselApi.on("reInit", onSelect);
+
+    return () => {
+      carouselApi.off("select", onSelect);
+      carouselApi.off("reInit", onSelect);
+    };
+  }, [carouselApi]);
+
+  if (hasChecked && isLoggedIn) {
     return null;
   }
 
   return (
     <main className="onboarding-bg">
       <div className="flex justify-around w-full">
-        <Image src={NexusLogo} alt="" className="py-[100px]" />
+        <Image src={NexusLogo} alt="DotPay" className="py-10 md:py-16" priority />
       </div>
       <div className="xsm:flex justify-center">
-        <Carousel className="xsm:w-[400px]">
+        <Carousel className="xsm:w-[400px]" setApi={setCarouselApi}>
           <CarouselContent>
             {onboardingSource.map((element, index) => {
               return (
                 <CarouselItem key={index}>
-                  <div className="flex flex-col justify-around h-[400px]">
+                  <div className="flex flex-col justify-around h-[280px]">
                     <h2 className="text-4xl text-white font-bold">
                       {element.title}
                     </h2>
                     <h4 className="text-white my-5">{element.subtitle}</h4>
-                    <article className="flex">
-                      <hr
-                        className="line"
-                        style={
-                          index == 0 ? { width: "150px" } : { width: "50px" }
-                        }
-                      />
-                      <hr
-                        className="line"
-                        style={
-                          index == 1 ? { width: "150px" } : { width: "50px" }
-                        }
-                      />
-                      <hr
-                        className="line"
-                        style={
-                          index == 2 ? { width: "150px" } : { width: "50px" }
-                        }
-                      />
-                    </article>
-                    <div className="flex flex-col justify-center items-center mt-6">
-                      <ThirdwebConnectButton mode="signup" />
-                    </div>
                   </div>
                 </CarouselItem>
               );
             })}
           </CarouselContent>
         </Carousel>
+      </div>
+      <div className="mt-2 mb-5 flex justify-center gap-2">
+        {onboardingSource.map((_, index) => (
+          <button
+            key={index}
+            type="button"
+            onClick={() => carouselApi?.scrollTo(index)}
+            className={`h-2 rounded-full transition-all ${
+              index === activeSlide ? "w-10 bg-white" : "w-5 bg-white/40"
+            }`}
+            aria-label={`Go to onboarding slide ${index + 1}`}
+            aria-current={index === activeSlide}
+          />
+        ))}
+      </div>
+      <div className="mx-auto flex w-full max-w-[320px] flex-col items-center gap-3 pb-8">
+        <div className="w-full">
+          <ThirdwebConnectButton mode="signup" />
+        </div>
+        <p className="text-white/80 text-sm">
+          Already have an account?{" "}
+          <Link href="/login" className="text-white underline underline-offset-2">
+            Sign in
+          </Link>
+        </p>
       </div>
     </main>
   );

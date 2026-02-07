@@ -128,13 +128,11 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
   // Initialize wallet data when authenticated
   useEffect(() => {
     if (isLoggedIn) {
-      console.log('User authenticated, attempting to refresh wallets');
       refreshWallet();
       refreshStellarWallet();
     } else {
       setWallet(null);
       setStellarWallet(null);
-      console.log('User not authenticated');
     }
   }, [isLoggedIn]);
 

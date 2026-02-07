@@ -4,7 +4,6 @@
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
-import { useRouter } from "next/router";
 
 export default function Error({
   error,
@@ -13,8 +12,6 @@ export default function Error({
   error: Error;
   reset: () => void;
 }) {
-  // const router = useRouter();
-
   useEffect(() => {
     toast.error(error.message);
   }, []);

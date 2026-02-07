@@ -30,12 +30,35 @@ interface PWAProviderProps {
 }
 
 export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
+  const enableCustomInstallPrompt = process.env.NEXT_PUBLIC_ENABLE_PWA_INSTALL_PROMPT === 'true';
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
+
+  // In development, remove any previously registered service workers/caches
+  // to prevent stale _next chunk URLs causing blank screens.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const cleanupDevServiceWorkers = async () => {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+      } catch {
+        // no-op: cleanup best-effort only
+      }
+    };
+
+    cleanupDevServiceWorkers();
+  }, []);
 
   useEffect(() => {
     // Check if app is installed
@@ -53,6 +76,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
 
     // Listen for beforeinstallprompt
     const handleBeforeInstallPrompt = (e: Event) => {
+      if (!enableCustomInstallPrompt) return;
       e.preventDefault();
       setInstallPrompt(e);
       
@@ -110,6 +134,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
 
     // Show install prompt after delay if not installed
     const timer = setTimeout(() => {
+      if (!enableCustomInstallPrompt) return;
       if (!isInstalled && !installPrompt) {
         const dismissed = localStorage.getItem('pwa-install-dismissed');
         const dismissedTime = dismissed ? parseInt(dismissed) : 0;
@@ -129,7 +154,7 @@ export const PWAProvider: React.FC<PWAProviderProps> = ({ children }) => {
       window.removeEventListener('offline', updateOnlineStatus);
       clearTimeout(timer);
     };
-  }, [isInstalled, installPrompt]);
+  }, [enableCustomInstallPrompt]);
 
   const triggerInstall = async () => {
     if (installPrompt) {
