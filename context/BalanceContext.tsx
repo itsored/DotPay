@@ -60,6 +60,7 @@
 import { BalanceContextType } from "@/types/api-types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useChain } from "@/context/ChainContext";
+import { useAuthSession } from "@/context/AuthSessionContext";
 import { createMockResponse, simulateDelay } from "@/lib/mock-data";
 
 // Create the context
@@ -80,11 +81,21 @@ export const BalanceProvider = ({
   children: React.ReactNode;
 }) => {
   const { chain } = useChain();
+  const { isLoggedIn, hasChecked } = useAuthSession();
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<any>(null);
 
   useEffect(() => {
+    if (!hasChecked || !isLoggedIn) {
+      setIsLoading(false);
+      setData(null);
+      setError(null);
+      return;
+    }
+
+    let active = true;
+
     const fetchBalance = async () => {
       setIsLoading(true);
       try {
@@ -94,18 +105,27 @@ export const BalanceProvider = ({
           usdValue: '1000.00',
           chain: chain || 'arbitrum',
         });
-        setData(mockData);
-        setError(null);
+        if (active) {
+          setData(mockData);
+          setError(null);
+        }
       } catch (err) {
-        setError(err);
-        setData(null);
+        if (active) {
+          setError(err);
+          setData(null);
+        }
       } finally {
-        setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchBalance();
-  }, [chain]);
+    return () => {
+      active = false;
+    };
+  }, [chain, hasChecked, isLoggedIn]);
 
   return (
     <BalanceContext.Provider value={{ isLoading, data, error }}>

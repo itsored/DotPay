@@ -1,456 +1,121 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import toast from "react-hot-toast";
-import { generateMockUser, createMockResponse, simulateDelay, MockUser } from "../lib/mock-data";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { authAPI, tokenUtils, userUtils } from "@/lib/auth";
+import { useAuthSession } from "@/context/AuthSessionContext";
 
-// Re-export User type for compatibility
-export type User = MockUser;
-
-// Mock token and user utilities
-const tokenUtils = {
-  setToken: (token: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dotpay_token', token);
-    }
-  },
-  getToken: (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('dotpay_token');
-    }
-    return null;
-  },
-  removeToken: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('dotpay_token');
-    }
-  },
-  isTokenValid: (): boolean => {
-    return !!tokenUtils.getToken();
-  },
-};
-
-const userUtils = {
-  setUser: (user: User) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dotpay_user', JSON.stringify(user));
-    }
-  },
-  getUser: (): User | null => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('dotpay_user');
-      return userData ? JSON.parse(userData) : null;
-    }
-    return null;
-  },
-  removeUser: () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('dotpay_user');
-    }
-  },
-  isAuthenticated: (): boolean => {
-    return tokenUtils.isTokenValid() && userUtils.getUser() !== null;
-  },
-};
-
-// Types
-export interface AuthContextType {
-  user: User | null;
+type AuthContextValue = {
+  user: any;
   loading: boolean;
   isAuthenticated: boolean;
-  
-  // Registration flow
+  login: (userData: any) => Promise<any>;
+  verifyLogin: (data: any) => Promise<any>;
+  logout: () => Promise<void>;
   register: (data: any) => Promise<any>;
   verifyEmail: (data: any) => Promise<any>;
   verifyPhone: (data: any) => Promise<any>;
-  
-  // Login flow
-  login: (data: any) => Promise<any>;
-  verifyLogin: (data: any) => Promise<any>;
-  
-  // Password reset
-  requestPasswordReset: (data: any) => Promise<any>;
-  resetPassword: (data: any) => Promise<any>;
-  
-  // Google authentication
-  googleAuth: (data: any) => Promise<any>;
-  linkGoogle: (data: any) => Promise<any>;
   getGoogleConfig: () => Promise<any>;
-  
-  // User profile
-  getUserProfile: () => Promise<any>;
-  
-  // Logout
-  logout: () => void;
-}
+};
 
-// Create context
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-// Provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { sessionUser, isLoggedIn, logout: sessionLogout } = useAuthSession();
+  const [loading, setLoading] = useState(false);
 
-  // Initialize auth state on mount
-  useEffect(() => {
-    const initializeAuth = () => {
-      try {
-        if (userUtils.isAuthenticated()) {
-          const userData = userUtils.getUser();
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        // Clear invalid data
-        tokenUtils.removeToken();
-        userUtils.removeUser();
-      } finally {
-        setLoading(false);
-      }
-    };
+  const user = useMemo(() => {
+    return sessionUser ?? userUtils.getUser();
+  }, [sessionUser]);
 
-    initializeAuth();
+  const isAuthenticated = Boolean(isLoggedIn || tokenUtils.isTokenValid() || user);
+
+  const withLoading = useCallback(async (fn: () => Promise<any>) => {
+    setLoading(true);
+    try {
+      return await fn();
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Helper function to handle successful authentication
-  const handleAuthSuccess = (response: any) => {
-    console.log("Processing auth success with response:", response);
-    
-    // Extract token from multiple possible locations
-    const token = (response as any)?.data?.token || 
-                 (response as any)?.token || 
-                 (response as any)?.data?.data?.token ||
-                 (response as any)?.data?.accessToken ||
-                 (response as any)?.accessToken;
-    
-    if (token) {
-      // Extract user data from response
-      const responseData = (response as any).data || response;
-      const userFromResponse = (responseData as any).user || responseData;
-      
-      const userData: User = {
-        email: (responseData as any).email || userFromResponse?.email || '',
-        phoneNumber: (responseData as any).phoneNumber || userFromResponse?.phoneNumber || '',
-        arbitrumWallet: (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || (responseData as any).walletAddress || (responseData as any).wallets?.evm || '',
-        celoWallet: (responseData as any).celoWallet || userFromResponse?.celoWallet || (responseData as any).walletAddress || (responseData as any).wallets?.evm || '',
-        walletAddress: (responseData as any).walletAddress || (responseData as any).arbitrumWallet || userFromResponse?.arbitrumWallet || (responseData as any).wallets?.evm || '', // fallback for compatibility
-        stellarAccountId: (responseData as any).stellarAccountId || (responseData as any).wallets?.stellar || '',
-        token,
-      };
-      
-      console.log("Storing user data:", userData);
-      
-      tokenUtils.setToken(token);
-      userUtils.setUser(userData);
-      setUser(userData);
-      
-      // Preload balance data in background for faster loading (temporarily disabled)
-      // preloadBalanceAfterLogin().catch(error => {
-      //   console.error('Failed to preload balance after login:', error);
-      // });
-      
-      toast.success((response as any).message || 'Authentication successful');
-      return userData;
-    } else {
-      console.error("No token found in response:", response);
-      throw new Error("Authentication failed - no token received");
-    }
-  };
+  const login = useCallback(
+    async (userData: any) =>
+      withLoading(async () => {
+        if (userData?.token) tokenUtils.setToken(userData.token);
+        if (userData?.user) userUtils.setUser(userData.user);
+        return { success: true, data: userData };
+      }),
+    [withLoading]
+  );
 
-  // Registration (using initiate for backward compatibility)
-  const register = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const response = createMockResponse(
-        { registrationId: `reg_${Date.now()}`, verificationMethod: data.verifyWith || 'email' },
-        'Registration initiated successfully. Please verify your email or phone.'
-      );
-      
-      toast.success(response.message);
-      return response;
-    } catch (error: any) {
-      toast.error('Registration failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const verifyLogin = useCallback(
+    async (data: any) =>
+      withLoading(async () => {
+        const res = await authAPI.verifyLogin(data);
+        const token = res?.data?.token;
+        const nextUser = res?.data?.user;
+        if (token) tokenUtils.setToken(token);
+        if (nextUser) userUtils.setUser(nextUser);
+        return res;
+      }),
+    [withLoading]
+  );
 
-  // Verify email
-  const verifyEmail = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const mockUser = generateMockUser(data.email);
-      const response = createMockResponse({
-        token: mockUser.token,
-        email: mockUser.email,
-        arbitrumWallet: mockUser.arbitrumWallet,
-        celoWallet: mockUser.celoWallet,
-        walletAddress: mockUser.walletAddress,
-        user: mockUser,
-      }, 'Email verified successfully');
-      
-      return handleAuthSuccess(response);
-    } catch (error: any) {
-      toast.error('Email verification failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const logout = useCallback(async () => {
+    tokenUtils.removeToken();
+    userUtils.removeUser();
+    await sessionLogout();
+  }, [sessionLogout]);
 
-  // Verify phone
-  const verifyPhone = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const mockUser = generateMockUser(undefined, data.phoneNumber);
-      const response = createMockResponse({
-        token: mockUser.token,
-        phoneNumber: mockUser.phoneNumber,
-        arbitrumWallet: mockUser.arbitrumWallet,
-        celoWallet: mockUser.celoWallet,
-        walletAddress: mockUser.walletAddress,
-        user: mockUser,
-      }, 'Phone verified successfully');
-      
-      return handleAuthSuccess(response);
-    } catch (error: any) {
-      toast.error('Phone verification failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const register = useCallback(
+    async (data: any) =>
+      withLoading(async () => {
+        return authAPI.registerInitiate(data);
+      }),
+    [withLoading]
+  );
 
-  // Login
-  const login = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const response = createMockResponse(
-        { verificationMethod: data.email ? 'email' : 'phone' },
-        'OTP sent successfully. Please check your email or phone.'
-      );
-      
-      toast.success(response.message);
-      return response;
-    } catch (error: any) {
-      toast.error('Login failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const verifyEmail = useCallback(
+    async (data: any) =>
+      withLoading(async () => {
+        return authAPI.verifyEmail(data);
+      }),
+    [withLoading]
+  );
 
-  // Verify login
-  const verifyLogin = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const mockUser = generateMockUser(data.email, data.phoneNumber);
-      const response = createMockResponse({
-        token: mockUser.token,
-        email: mockUser.email,
-        phoneNumber: mockUser.phoneNumber,
-        arbitrumWallet: mockUser.arbitrumWallet,
-        celoWallet: mockUser.celoWallet,
-        walletAddress: mockUser.walletAddress,
-        user: mockUser,
-      }, 'Login successful');
-      
-      return handleAuthSuccess(response);
-    } catch (error: any) {
-      toast.error('Login verification failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const verifyPhone = useCallback(
+    async (data: any) =>
+      withLoading(async () => {
+        return authAPI.verifyPhone(data);
+      }),
+    [withLoading]
+  );
 
-  // Request password reset
-  const requestPasswordReset = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const response = createMockResponse(
-        {},
-        'Password reset OTP sent to your email'
-      );
-      
-      toast.success(response.message);
-      return response;
-    } catch (error: any) {
-      toast.error('Password reset request failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+  const getGoogleConfig = useCallback(async () => {
+    return authAPI.getGoogleConfig();
+  }, []);
 
-  // Reset password
-  const resetPassword = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const response = createMockResponse(
-        {},
-        'Password reset successfully'
-      );
-      
-      toast.success(response.message);
-      return response;
-    } catch (error: any) {
-      toast.error('Password reset failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Google authentication
-  const googleAuth = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(1000);
-      
-      const mockUser = generateMockUser('google@example.com');
-      mockUser.googleId = 'google_' + Date.now();
-      const response = createMockResponse({
-        token: mockUser.token,
-        email: mockUser.email,
-        arbitrumWallet: mockUser.arbitrumWallet,
-        celoWallet: mockUser.celoWallet,
-        walletAddress: mockUser.walletAddress,
-        user: mockUser,
-      }, 'Google authentication successful');
-      
-      return handleAuthSuccess(response);
-    } catch (error: any) {
-      toast.error('Google authentication failed');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Link Google account
-  const linkGoogle = async (data: any) => {
-    try {
-      setLoading(true);
-      await simulateDelay(800);
-      
-      const response = createMockResponse(
-        {},
-        'Google account linked successfully'
-      );
-      
-      toast.success(response.message);
-      return response;
-    } catch (error: any) {
-      toast.error('Failed to link Google account');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get Google config
-  const getGoogleConfig = async () => {
-    try {
-      await simulateDelay(300);
-      return createMockResponse({
-        clientId: 'mock-google-client-id',
-        redirectUri: typeof window !== 'undefined' ? window.location.origin + '/login' : '',
-      }, 'Google config loaded');
-    } catch (error: any) {
-      toast.error('Failed to get Google configuration');
-      throw error;
-    }
-  };
-
-  // Get user profile
-  const getUserProfile = async () => {
-    try {
-      // Since the backend endpoint doesn't exist yet, return the current user data
-      const profileData = {
-        id: user?.id,
-        email: user?.email,
-        phoneNumber: user?.phoneNumber,
-        googleId: user?.googleId,
-        arbitrumWallet: user?.arbitrumWallet,
-        celoWallet: user?.celoWallet,
-        walletAddress: user?.walletAddress,
-        authMethods: user?.phoneNumber ? ['phone'] : [],
-        ...(user?.email && { authMethods: [...(user?.phoneNumber ? ['phone'] : []), 'email'] })
-      };
-      
-      return {
-        success: true,
-        data: profileData,
-        message: 'Profile loaded successfully'
-      };
-    } catch (error: any) {
-      console.error("Failed to get user profile:", error);
-      throw error;
-    }
-  };
-
-  // Logout
-  const logout = async () => {
-    try {
-      await simulateDelay(300);
-    } catch (error) {
-      // Continue with local logout
-      console.error('Logout error:', error);
-    } finally {
-      tokenUtils.removeToken();
-      userUtils.removeUser();
-      setUser(null);
-      toast.success('Logged out successfully');
-    }
-  };
-
-  const value: AuthContextType = {
+  const value: AuthContextValue = {
     user,
     loading,
-    isAuthenticated: !!user && userUtils.isAuthenticated(),
+    isAuthenticated,
+    login,
+    verifyLogin,
+    logout,
     register,
     verifyEmail,
     verifyPhone,
-    login,
-    verifyLogin,
-    requestPasswordReset,
-    resetPassword,
-    googleAuth,
-    linkGoogle,
     getGoogleConfig,
-    getUserProfile,
-    logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use the auth context
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  return ctx;
 };
+

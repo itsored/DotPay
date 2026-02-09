@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useWallet } from "@/context/WalletContext";
-import { useAuth } from "@/context/AuthContext";
 import WalletOverview from "./WalletOverview";
 
 const WalletDashboard: React.FC = () => {
-  const { isAuthenticated } = useAuth();
   const { 
     wallet, 
     balance,
@@ -16,20 +14,6 @@ const WalletDashboard: React.FC = () => {
     formatBalance, 
     formatUSD 
   } = useWallet();
-
-  if (!isAuthenticated) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Please log in to view your wallet</p>
-        <button 
-          onClick={() => window.location.href = '/login'}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
-        >
-          Go to Login
-        </button>
-      </div>
-    );
-  }
 
   if (loading && !wallet) {
     return (

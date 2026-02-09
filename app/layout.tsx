@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import "@/styles/style.css";
-import { AuthProvider } from "@/context/AuthContext"; // Ensure this path matches the location of your AuthContext file
 import { BalanceProvider } from "@/context/BalanceContext";
 import { ChainProvider } from "@/context/ChainContext";
 import { WalletProvider } from "@/context/WalletContext";
@@ -11,8 +11,11 @@ import { BusinessProvider } from "@/context/BusinessContext";
 import ClientOnly from "./ClientOnly";
 import { ReactQueryClientProvider } from "@/providers/ReactQueryClientProvider";
 import { Toaster } from "react-hot-toast";
-import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import PWAUpdateNotification from "@/components/pwa/PWAUpdateNotification";
+import { ThirdwebProvider } from "thirdweb/react";
+import { AuthSessionProvider } from "@/context/AuthSessionContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { ThirdwebAutoConnect } from "@/components/auth/ThirdwebAutoConnect";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -100,9 +103,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        {process.env.NODE_ENV === "development" && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function(){
+                  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(regs){
+                      regs.forEach(function(reg){ reg.unregister(); });
+                    }).catch(function(){});
+                  }
+                  if (typeof caches !== 'undefined') {
+                    caches.keys().then(function(keys){
+                      keys.forEach(function(k){ caches.delete(k); });
+                    }).catch(function(){});
+                  }
+                })();
+              `,
+            }}
+          />
+        )}
         <meta name="application-name" content="DotPay" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -138,7 +160,11 @@ export default function RootLayout({
         <meta property="og:url" content="https://app.dotpay.xyz" />
         <meta property="og:image" content="https://app.dotpay.xyz/icons/icon-512x512.png" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="lazyOnload"
+        />
         {/* Suppress console logs in production */}
         {process.env.NODE_ENV === 'production' && (
           <script dangerouslySetInnerHTML={{ __html: `
@@ -156,22 +182,28 @@ export default function RootLayout({
           ` }} />
         )}
         <ReactQueryClientProvider>
-          <PWAProvider>
-            <AuthProvider>
-              <BusinessProvider>
-                <WalletProvider>
-                  <ChainProvider>
-                    <BalanceProvider>
-                      <ClientOnly>{children}</ClientOnly>
-                      <PWAInstallPrompt />
-                      <PWAUpdateNotification />
-                      <Toaster />
-                    </BalanceProvider>
-                  </ChainProvider>
-                </WalletProvider>
-              </BusinessProvider>
-            </AuthProvider>
-          </PWAProvider>
+          <ThirdwebProvider>
+            <ThirdwebAutoConnect />
+            <AuthSessionProvider>
+              <AuthProvider>
+                <PWAProvider>
+                  <BusinessProvider>
+                    <WalletProvider>
+                      <ChainProvider>
+                        <BalanceProvider>
+                          <ClientOnly>{children}</ClientOnly>
+                          {/* Temporarily hide install modal to keep auth/onboarding flow clean */}
+                          {/* <PWAInstallPrompt /> */}
+                          <PWAUpdateNotification />
+                          <Toaster />
+                        </BalanceProvider>
+                      </ChainProvider>
+                    </WalletProvider>
+                  </BusinessProvider>
+                </PWAProvider>
+              </AuthProvider>
+            </AuthSessionProvider>
+          </ThirdwebProvider>
         </ReactQueryClientProvider>
       </body>
     </html>
