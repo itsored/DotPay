@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ConnectButton } from "thirdweb/react";
 import type { LoginPayload, VerifyLoginPayloadParams } from "thirdweb/auth";
-import { arbitrum, base, celo, polygon } from "thirdweb/chains";
+import { arbitrum, arbitrumSepolia, base, celo, polygon } from "thirdweb/chains";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { thirdwebClient } from "@/lib/thirdwebClient";
 import { generatePayload, login } from "@/app/(auth)/actions/login";
@@ -18,6 +18,13 @@ export const ThirdwebConnectButton: React.FC<ThirdwebConnectButtonProps> = ({ mo
   const router = useRouter();
   const { isLoggedIn, hasChecked } = useAuthSession();
   const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+  const enableTestnets = process.env.NODE_ENV !== "production";
+
+  // In local/dev we default to Arbitrum Sepolia so you can test token transfers.
+  const defaultChain = enableTestnets ? arbitrumSepolia : arbitrum;
+  const supportedChains = enableTestnets
+    ? [arbitrumSepolia]
+    : [arbitrum, base, celo, polygon];
 
   const wallets = useMemo(
     () => [
@@ -86,8 +93,8 @@ export const ThirdwebConnectButton: React.FC<ThirdwebConnectButtonProps> = ({ mo
   return (
     <ConnectButton
       client={thirdwebClient}
-      chain={arbitrum}
-      chains={[arbitrum, base, celo, polygon]}
+      chain={defaultChain}
+      chains={supportedChains}
       wallets={wallets}
       recommendedWallets={wallets}
       showAllWallets={false}

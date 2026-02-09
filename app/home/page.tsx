@@ -213,7 +213,7 @@ export default function HomePage() {
 
   const handleQuickAction = (action: "send" | "receive" | "pay" | "topup") => {
     if (action === "send") {
-      toast("Send flow will be reconnected next.");
+      router.push("/send");
       return;
     }
     if (action === "receive") {

@@ -15,6 +15,7 @@ import PWAUpdateNotification from "@/components/pwa/PWAUpdateNotification";
 import { ThirdwebProvider } from "thirdweb/react";
 import { AuthSessionProvider } from "@/context/AuthSessionContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThirdwebAutoConnect } from "@/components/auth/ThirdwebAutoConnect";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -182,6 +183,7 @@ export default function RootLayout({
         )}
         <ReactQueryClientProvider>
           <ThirdwebProvider>
+            <ThirdwebAutoConnect />
             <AuthSessionProvider>
               <AuthProvider>
                 <PWAProvider>

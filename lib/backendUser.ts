@@ -123,6 +123,44 @@ export async function getUserFromBackend(address: string): Promise<BackendUserRe
 }
 
 /**
+ * Resolve a recipient identifier (DotPay ID, @username, email, phone) to a user record.
+ * Backend returns a minimal payload; fields not returned will be null.
+ */
+export async function lookupUserFromBackend(query: string): Promise<BackendUserRecord | null> {
+  if (!isBackendApiConfigured()) return null;
+  const q = query?.trim();
+  if (!q) return null;
+
+  try {
+    const res = await fetch(`${API_URL}/api/users/lookup?q=${encodeURIComponent(q)}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    if (res.status === 404) return null;
+
+    if (!res.ok) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("Backend lookup user failed:", res.status, await res.text());
+      }
+      return null;
+    }
+
+    const payload = await res.json();
+    const data = payload?.data;
+    if (!payload?.success || !data?.address) return null;
+
+    const fallbackAddress = String(data.address ?? "").trim().toLowerCase();
+    return mapBackendUserRecord(data, fallbackAddress);
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Backend lookup user error:", err);
+    }
+    return null;
+  }
+}
+
+/**
  * Set username for a wallet and provision a DotPay ID (if missing).
  */
 export async function setDotpayIdentity(
