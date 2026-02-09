@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThirdwebConnectButton } from "@/components/auth/ThirdwebConnectButton";
 import { useAuthSession } from "@/context/AuthSessionContext";
+import AuthHandoff from "@/components/auth/AuthHandoff";
 
 const Signup = () => {
   const { isLoggedIn, hasChecked } = useAuthSession();
@@ -12,12 +13,18 @@ const Signup = () => {
 
   useEffect(() => {
     if (hasChecked && isLoggedIn) {
-      router.replace("/onboarding/identity");
+      router.replace("/auth/finish?mode=signup");
     }
   }, [hasChecked, isLoggedIn, router]);
 
   if (hasChecked && isLoggedIn) {
-    return null;
+    return (
+      <AuthHandoff
+        variant="app"
+        title="Welcome to DotPay"
+        subtitle="Setting up your account..."
+      />
+    );
   }
 
   return (

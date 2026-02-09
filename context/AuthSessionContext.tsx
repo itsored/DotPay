@@ -17,7 +17,7 @@ type AuthSessionContextValue = {
   loading: boolean;
   /** True after first session check (so we know whether to show content or redirect). */
   hasChecked: boolean;
-  refresh: () => Promise<void>;
+  refresh: (options?: { background?: boolean }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -85,7 +85,7 @@ export const AuthSessionProvider = ({ children }: { children: React.ReactNode })
         console.log("[DotPay] Backend connected – user sync will run on sign-in.");
       } else {
         console.warn(
-          "[DotPay] Backend unreachable – ensure backend is running (npm run dev in backend/) and NEXT_PUBLIC_DOTPAY_API_URL is set."
+          "[DotPay] Backend unreachable – ensure the DotPay backend is running and NEXT_PUBLIC_DOTPAY_API_URL is set."
         );
       }
     });

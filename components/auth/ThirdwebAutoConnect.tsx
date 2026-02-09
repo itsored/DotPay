@@ -1,11 +1,12 @@
 "use client";
 
 import { AutoConnect } from "thirdweb/react";
-import { arbitrum, arbitrumSepolia } from "thirdweb/chains";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
+import { getDotPayNetwork, getDotPayUsdcChain } from "@/lib/dotpayNetwork";
 import { thirdwebClient } from "@/lib/thirdwebClient";
 
-const enableTestnets = process.env.NODE_ENV !== "production";
+const dotpayNetwork = getDotPayNetwork();
+const chain = getDotPayUsdcChain(dotpayNetwork);
 
 // Keep these stable (module-level) so AutoConnect doesn't re-run on every render.
 const wallets = [
@@ -37,10 +38,9 @@ export function ThirdwebAutoConnect() {
     <AutoConnect
       client={thirdwebClient}
       wallets={wallets}
-      chain={enableTestnets ? arbitrumSepolia : arbitrum}
+      chain={chain}
       timeout={4000}
       appMetadata={appMetadata}
     />
   );
 }
-

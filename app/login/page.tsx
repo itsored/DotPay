@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ThirdwebConnectButton } from "@/components/auth/ThirdwebConnectButton";
 import Link from "next/link";
 import { useAuthSession } from "@/context/AuthSessionContext";
+import AuthHandoff from "@/components/auth/AuthHandoff";
 
 const Login: React.FC = () => {
   const { isLoggedIn, hasChecked } = useAuthSession();
@@ -13,12 +14,18 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (hasChecked && isLoggedIn) {
-      router.replace("/home");
+      router.replace("/auth/finish?mode=login");
     }
   }, [hasChecked, isLoggedIn, router]);
 
   if (hasChecked && isLoggedIn) {
-    return null;
+    return (
+      <AuthHandoff
+        variant="app"
+        title="Signing you in"
+        subtitle="Verifying your session..."
+      />
+    );
   }
 
   return (

@@ -5,9 +5,11 @@ import toast from "react-hot-toast";
 import { useAuthSession } from "@/context/AuthSessionContext";
 import {
   getUserFromBackend,
+  isBackendApiConfigured,
   setDotpayIdentity,
   syncUserToBackend,
 } from "@/lib/backendUser";
+import AuthHandoff from "@/components/auth/AuthHandoff";
 
 const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
 
@@ -24,6 +26,7 @@ export default function DotpayIdentityOnboardingPage() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   const walletAddress = useMemo(
     () => sessionUser?.address || address || null,
@@ -32,6 +35,7 @@ export default function DotpayIdentityOnboardingPage() {
 
   const resolvedUsername = normalizeUsername(username);
   const isUsernameValid = USERNAME_REGEX.test(resolvedUsername);
+  const backendConfigured = isBackendApiConfigured();
 
   useEffect(() => {
     if (hasChecked && !isLoggedIn) {
@@ -43,6 +47,12 @@ export default function DotpayIdentityOnboardingPage() {
 
   const hydrateIdentityState = useCallback(async () => {
     if (!walletAddress) return;
+
+    if (!backendConfigured) {
+      setError("Identity setup is unavailable because the backend API is not configured.");
+      setReady(true);
+      return;
+    }
 
     setCheckingProfile(true);
     setError(null);
@@ -59,21 +69,30 @@ export default function DotpayIdentityOnboardingPage() {
         redirectToHome();
         return;
       }
+      setReady(true);
     } catch {
       // Non-blocking: user can still set username even if profile read fails.
+      setReady(true);
     } finally {
       setCheckingProfile(false);
     }
-  }, [sessionUser, walletAddress]);
+  }, [backendConfigured, sessionUser, walletAddress]);
 
   useEffect(() => {
+    if (!hasChecked) return;
+    if (!isLoggedIn) return;
     hydrateIdentityState();
-  }, [hydrateIdentityState]);
+  }, [hasChecked, hydrateIdentityState, isLoggedIn]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!walletAddress) {
       setError("Wallet not detected. Please reconnect and try again.");
+      return;
+    }
+
+    if (!backendConfigured) {
+      setError("Identity setup is currently unavailable. Please continue to DotPay.");
       return;
     }
 
@@ -99,13 +118,65 @@ export default function DotpayIdentityOnboardingPage() {
     }
   };
 
+  if (hasChecked && !isLoggedIn) {
+    return (
+      <AuthHandoff
+        variant="onboarding"
+        title="Session expired"
+        subtitle="Redirecting you to sign in..."
+      />
+    );
+  }
+
+  if (!ready || checkingProfile || !walletAddress) {
+    return (
+      <AuthHandoff
+        variant="onboarding"
+        title="Setting up your DotPay identity"
+        subtitle={
+          !walletAddress
+            ? "Finalizing secure sign-in..."
+            : checkingProfile
+              ? "Checking your account..."
+              : "Preparing your next step..."
+        }
+      />
+    );
+  }
+
+  if (!backendConfigured) {
+    return (
+      <main className="app-background min-h-screen px-4 py-8 text-white">
+        <section className="mx-auto w-full max-w-xl rounded-2xl border border-white/10 bg-black/40 p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Identity Setup</p>
+          <h1 className="mt-2 text-2xl font-bold">Temporarily unavailable</h1>
+          <p className="mt-2 text-sm text-white/75">
+            Your session is active, but DotPay identity setup needs the backend API configured.
+          </p>
+          {error && (
+            <p className="mt-4 rounded-lg border border-amber-300/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+              {error}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={redirectToHome}
+            className="mt-6 w-full rounded-xl border border-cyan-300/40 bg-cyan-500/15 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-500/25"
+          >
+            Continue to DotPay
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="app-background min-h-screen px-4 py-8 text-white">
       <section className="mx-auto w-full max-w-xl rounded-2xl border border-white/10 bg-black/40 p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Step 2 of 2</p>
         <h1 className="mt-2 text-2xl font-bold">Choose your username</h1>
         <p className="mt-2 text-sm text-white/75">
-          This will be your public handle for receiving payments on DotPay.
+          Usernames are for confirmation and in-app display. Payments use your DotPay ID (DP...), which we generate after you set this.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -128,7 +199,7 @@ export default function DotpayIdentityOnboardingPage() {
               />
             </div>
             <p className="mt-2 text-xs text-white/60">
-              Use 3-20 characters: lowercase letters, numbers, and underscore.
+              Use 3-20 characters: lowercase letters, numbers, and underscore. This username is not used as a payment input.
             </p>
           </div>
 

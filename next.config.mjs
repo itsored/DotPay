@@ -67,6 +67,15 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@phosphor-icons/react'],
   },
+  webpack: (config) => {
+    // thirdweb -> walletconnect -> pino optionally references `pino-pretty`.
+    // We don't use it in the app bundle; stubbing avoids build warnings/errors.
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "pino-pretty": false,
+    };
+    return config;
+  },
   async redirects() {
     return [
       {

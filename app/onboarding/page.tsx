@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/carousel";
 import { ThirdwebConnectButton } from "@/components/auth/ThirdwebConnectButton";
 import { useAuthSession } from "@/context/AuthSessionContext";
+import AuthHandoff from "@/components/auth/AuthHandoff";
 
 const Onboarding = () => {
   const { isLoggedIn, hasChecked } = useAuthSession();
@@ -23,7 +24,7 @@ const Onboarding = () => {
 
   useEffect(() => {
     if (hasChecked && isLoggedIn) {
-      router.replace("/onboarding/identity");
+      router.replace("/auth/finish?mode=signup");
     }
   }, [hasChecked, isLoggedIn, router]);
 
@@ -45,7 +46,13 @@ const Onboarding = () => {
   }, [carouselApi]);
 
   if (hasChecked && isLoggedIn) {
-    return null;
+    return (
+      <AuthHandoff
+        variant="onboarding"
+        title="Welcome back"
+        subtitle="Opening your wallet..."
+      />
+    );
   }
 
   return (

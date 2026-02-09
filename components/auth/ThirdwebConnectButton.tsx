@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ConnectButton } from "thirdweb/react";
 import type { LoginPayload, VerifyLoginPayloadParams } from "thirdweb/auth";
-import { arbitrum, arbitrumSepolia, base, celo, polygon } from "thirdweb/chains";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
+import { getDotPayNetwork, getDotPaySupportedChains, getDotPayUsdcChain } from "@/lib/dotpayNetwork";
 import { thirdwebClient } from "@/lib/thirdwebClient";
 import { generatePayload, login } from "@/app/(auth)/actions/login";
 import { useAuthSession } from "@/context/AuthSessionContext";
@@ -18,13 +18,11 @@ export const ThirdwebConnectButton: React.FC<ThirdwebConnectButtonProps> = ({ mo
   const router = useRouter();
   const { isLoggedIn, hasChecked } = useAuthSession();
   const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-  const enableTestnets = process.env.NODE_ENV !== "production";
+  const dotpayNetwork = getDotPayNetwork();
 
-  // In local/dev we default to Arbitrum Sepolia so you can test token transfers.
-  const defaultChain = enableTestnets ? arbitrumSepolia : arbitrum;
-  const supportedChains = enableTestnets
-    ? [arbitrumSepolia]
-    : [arbitrum, base, celo, polygon];
+  // Default: dev -> Sepolia, prod -> Arbitrum One. Override with NEXT_PUBLIC_DOTPAY_NETWORK.
+  const defaultChain = getDotPayUsdcChain(dotpayNetwork);
+  const supportedChains = getDotPaySupportedChains(dotpayNetwork);
 
   const wallets = useMemo(
     () => [
@@ -42,6 +40,7 @@ export const ThirdwebConnectButton: React.FC<ThirdwebConnectButtonProps> = ({ mo
 
   useEffect(() => {
     router.prefetch("/home");
+    router.prefetch("/auth/finish");
     router.prefetch("/onboarding/identity");
   }, [router]);
 
@@ -59,7 +58,7 @@ export const ThirdwebConnectButton: React.FC<ThirdwebConnectButtonProps> = ({ mo
     async (params: VerifyLoginPayloadParams) => {
       await login(params);
       const address = params?.payload?.address ?? null;
-      const nextRoute = mode === "signup" ? "/onboarding/identity" : "/home";
+      const nextRoute = `/auth/finish?mode=${encodeURIComponent(mode)}`;
       window.dispatchEvent(
         new CustomEvent("dotpay-auth-login", { detail: { address } })
       );
