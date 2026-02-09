@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# DotPay (Web App)
 
-## Getting Started
+Consumer payments UI for DotPay (KES-first), built with Next.js App Router.
 
-First, run the development server:
+## Local Development
 
 ```bash
+npm install
+cp .env.example .env
+# fill the env vars
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App runs at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Backend
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+The backend is a separate repo (not inside this project). Set:
 
-## Learn More
+- `NEXT_PUBLIC_DOTPAY_API_URL` to your backend URL (local or production)
+- `DOTPAY_INTERNAL_API_KEY` must match the backend’s `DOTPAY_INTERNAL_API_KEY`
 
-To learn more about Next.js, take a look at the following resources:
+If the backend URL is not configured, DotPay ID / username / notifications features degrade gracefully.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy (Vercel)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+1. Push this repo to GitHub and import it in Vercel.
+2. In Vercel Project Settings, set Environment Variables (from `.env.example`):
+   - `NEXT_PUBLIC_THIRDWEB_CLIENT_ID`
+   - `NEXT_PUBLIC_THIRDWEB_AUTH_DOMAIN` (set to your Vercel/custom domain, no protocol)
+   - `AUTH_PRIVATE_KEY`
+   - `THIRDWEB_SECRET_KEY` (recommended)
+   - `NEXT_PUBLIC_DOTPAY_API_URL`
+   - `DOTPAY_INTERNAL_API_KEY`
+   - `ARBISCAN_API_KEY` (required for on-chain activity + notifications verification)
+   - `NEXT_PUBLIC_DOTPAY_NETWORK` (`mainnet` for production, `sepolia` for testing)
 
-## Deploy on Vercel
+Vercel will run `npm run build` and `npm start` automatically.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Security
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Do not commit secrets. Keep them in Vercel env vars (and local `.env`, which is gitignored).
