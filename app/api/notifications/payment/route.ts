@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: "Invalid transaction hash." }, { status: 400 });
   }
 
-  const backendUrl = (process.env.NEXT_PUBLIC_DOTPAY_API_URL || "").trim();
+  const backendUrl = (process.env.NEXT_PUBLIC_DOTPAY_API_URL || "").trim().replace(/\/+$/, "");
   const internalKey = (process.env.DOTPAY_INTERNAL_API_KEY || "").trim();
 
   if (!backendUrl) {
@@ -257,4 +257,3 @@ export async function POST(req: Request) {
     { status: 200 }
   );
 }
-

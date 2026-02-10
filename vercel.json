@@ -2,6 +2,7 @@
   "git": {
     "deploymentEnabled": {
       "main": true,
+      "onboarding": true,
       "v2": true
     }
   },
