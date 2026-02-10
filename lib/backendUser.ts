@@ -1,7 +1,7 @@
 import type { SessionUser } from "@/types/session-user";
 
 // Set NEXT_PUBLIC_DOTPAY_API_URL in .env (e.g. http://localhost:4000) so users sync to backend.
-const API_URL = (process.env.NEXT_PUBLIC_DOTPAY_API_URL || "").trim();
+const API_URL = (process.env.NEXT_PUBLIC_DOTPAY_API_URL || "").trim().replace(/\/+$/, "");
 
 export type BackendUserRecord = {
   id: string;
